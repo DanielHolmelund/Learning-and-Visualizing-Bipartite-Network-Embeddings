@@ -1,4 +1,5 @@
-# Bipartite_Visualizing_Embeddings
+# Learning and Visualizing Bipartite Network Embeddings
 
 Template for project
 
+ 

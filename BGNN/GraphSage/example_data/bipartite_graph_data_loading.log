@@ -1,0 +1,31 @@
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 19 : INFO  BipartiteGraphDataLoader __init__().
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 26 : INFO  group_u_list_file_path = ../../data/cora/node_list
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 27 : INFO  group_u_attr_file_path = ../../data/cora/node_attr
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 28 : INFO  group_u_label_file_path = ../../data/cora/node_true
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 30 : INFO  edge_list_file_path = ../../data/cora/edgelist
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 32 : INFO  group_v_list_file_path = ../../data/cora/group_list
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 33 : INFO  group_v_attr_file_path = ../../data/cora/group_attr
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 34 : INFO  group_v_label_file_path = None
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 60 : INFO  BipartiteGraphDataLoader __init__(). END
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 78 : INFO  ##### generate_adjacent_matrix_feature_and_labels. START
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 210 : INFO  before merging with v_list, the len is = 877
+2019-05-20 Monday 02:08:05  graphsage_data_loader_cora.py : 218 : INFO  after merging with v_attr_dict, the len is = 877
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 233 : INFO  __generate_adjacent_matrix START
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 235 : INFO  u_node_list = 734
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 236 : INFO  v_node_list = 877
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 237 : INFO  edge_list = 1802
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 239 : INFO  start to load bipartite for u
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 249 : INFO  (734, 877)
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 252 : INFO  end to load bipartite for u
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 254 : INFO  start to load bipartite for u
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 264 : INFO  (877, 734)
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 267 : INFO  end to load bipartite for u
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 122 : INFO  #### generate_adjacent_matrix_feature_and_labels. END
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 611 : INFO  Start graphsage two hop graph loader
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 466 : INFO  ID map node
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 468 : INFO  Nodes Form
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 470 : INFO  Link Form
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 472 : INFO  Class Form
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 474 : INFO  Feature Form
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 476 : INFO  Write to Json
+2019-05-20 Monday 02:08:06  graphsage_data_loader_cora.py : 478 : INFO  Done written

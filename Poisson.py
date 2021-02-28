@@ -21,13 +21,9 @@ class LatentSpace():
 
             return embedding_vector
 
-    def scatter(self, u, v):
+    def y(self):
+        # blackbox for now
 
-        
-        plt.scatter(embedding[:, 0], embedding[:, 1], c=digits.target, cmap='Spectral', s=5)
-        plt.gca().set_aspect('equal', 'datalim')
-        plt.colorbar(boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
-        plt.show
 
     def poisson(self, u, v):
 
@@ -46,5 +42,11 @@ class LatentSpace():
         p = 2 # p-norm
         theta[i][j] = torch.exp(gamma[i] + alpha[j] - torch.dist(u[i], v[j], p)
         return
+
+    def scatter(self, u, v):
+        plt.scatter(embedding[:, 0], embedding[:, 1], c=digits.target, cmap='Spectral', s=5)
+        plt.gca().set_aspect('equal', 'datalim')
+        plt.colorbar(boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
+        plt.show
 
 

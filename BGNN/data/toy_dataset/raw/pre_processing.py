@@ -179,6 +179,17 @@ if __name__ == '__main__':
     B.add_nodes_from(v_idx_set, bipartite=1)
     B.add_edges_from(bipartite_edges_set)
     assert nx.is_bipartite(B)
+    import matplotlib.pyplot as plt
+    plt.figure()
+
+    edges = B.edges()
+    print(edges)
+    X, Y = nx.algorithms.bipartite.sets(B)
+    pos = dict()
+    pos.update((n, (1, i)) for i, n in enumerate(X))  # put nodes from X at x=1
+    pos.update((n, (2, i)) for i, n in enumerate(Y))  # put nodes from Y at x=2
+    nx.draw_networkx(B, pos=pos, edges=edges)
+    plt.show()
 
     #####
     # Output

@@ -22,6 +22,7 @@ cols = cols[0:-2]
 
 
 x = 1 '''
+
 import networkx as nx
 from node2vec import Node2Vec
 import matplotlib.pyplot as plt
@@ -55,6 +56,10 @@ edges_embs = HadamardEmbedder(keyed_vectors=model.wv)
 
 # Look for embeddings on the fly - here we pass normal tuples
 edges_embs[('1', '2')]
+
+for i in range(len(edges_embs)):
+
+
 ''' OUTPUT
 array([ 5.75068220e-03, -1.10937878e-02,  3.76693785e-01,  2.69105062e-02,
        ... ... ....
@@ -72,3 +77,4 @@ edges_kv.most_similar(str(('1', '2')))
 #edges_kv.save_word2vec_format("EDGES_EMBEDDING_FILENAME")
 
 x = 1
+

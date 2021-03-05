@@ -36,11 +36,11 @@ class LSM():
     def log_likelihood(self):
         Lambda = self.beta + self.gamma - abs(self.z_dist)
 
-        LL += (torch.sum(torch.sparse.mm(A, Lambda)) - torch.sum(torch.exp(Lambda)))
+        LL = (torch.sum(torch.sparse.mm(A, Lambda)) - torch.sum(torch.exp(Lambda)))
 
-        LL += torch.sum(torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), axis = 1), axis = 0)
+        LL = torch.sum(torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0), dim=1)
 
-
+        LL = torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0) * torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=1)
 
 
 

@@ -30,11 +30,13 @@ class LSM():
         self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size, self.latent_dim, device=device))
 
 
-        self.z_dist = torch.pairwise_distance(self.latent_zi, self.latent_zj, p=2)
-
 
     def log_likelihood(self):
-        Lambda = self.beta + self.gamma - abs(self.z_dist)
+
+        self.p_dist = torch.pairwise_distance(self.latent_zi, self.latent_zj, p=2)
+        z_dist =
+        Lambda = self.beta + self.gamma - abs(z_dist)
+
 
         LL = (torch.sum(torch.sparse.mm(A, Lambda)) - torch.sum(torch.exp(Lambda)))
 
@@ -43,5 +45,7 @@ class LSM():
         LL = torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0) * torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=1)
 
 
+
+if __name__ == "__main__":
 
 

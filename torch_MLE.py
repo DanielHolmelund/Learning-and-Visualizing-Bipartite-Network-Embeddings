@@ -34,9 +34,8 @@ class LSM():
     def log_likelihood(self):
 
         self.p_dist = torch.pairwise_distance(self.latent_zi, self.latent_zj, p=2)
-        z_dist =
+        z_dist = ((self.latent_zi - self.latent_zj)**2).sum(-1)**0.5
         Lambda = self.beta + self.gamma - abs(z_dist)
-
 
         LL = (torch.sum(torch.sparse.mm(A, Lambda)) - torch.sum(torch.exp(Lambda)))
 
@@ -47,5 +46,9 @@ class LSM():
 
 
 if __name__ == "__main__":
+
+
+
+
 
 

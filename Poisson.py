@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 class LatentSpace():
     def __init__(self):
 
+
+    def
+
+
     def embedding(self, vector, method):
         """
 
@@ -27,9 +31,6 @@ class LatentSpace():
 
     def poisson(self, u, v):
 
-        u = embedding(u, "UMAP")
-        v = embedding(v, "UMAP")
-
         # torch.logit
 
         #Gamma distribution
@@ -39,14 +40,20 @@ class LatentSpace():
         # or sample_n(n)??
         #m.sample()  # Gamma distributed with concentration=1 and rate=1
 
+
+
         p = 2 # p-norm
-        theta[i][j] = torch.exp(gamma[i] + alpha[j] - torch.dist(u[i], v[j], p)
+        theta[i][j] = torch.exp(gamma[i] + alpha[j] - torch.dist(u[i], v[j], p))
         return
+
+
 
     def scatter(self, u, v):
         plt.scatter(embedding[:, 0], embedding[:, 1], c=digits.target, cmap='Spectral', s=5)
         plt.gca().set_aspect('equal', 'datalim')
         plt.colorbar(boundaries=np.arange(11) - 0.5).set_ticks(np.arange(10))
         plt.show
+
+
 
 

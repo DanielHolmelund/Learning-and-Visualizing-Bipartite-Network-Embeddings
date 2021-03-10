@@ -4,8 +4,11 @@ from scipy.io import mmread
 import torch.optim as optim
 import torch.nn as nn
 from Adjacency_matrix import Preprocessing
-
+import matplotlib.pyplot as plt
+import numpy as np
 #Creating dataset
+
+np.random.seed(0)
 
 os.chdir('/Users/christiandjurhuus/PycharmProjects/Learning-and-Visualizing-Bipartite-Network-Embeddings/Datasets/divorce')
 
@@ -62,16 +65,17 @@ if __name__ == "__main__":
 #    model = LSM(B=preproc.From_Biadjacency_To_Adjacency(A), input_size=A.shape[0], latent_dim=2)
     model = LSM(B=A, input_size=A.shape, latent_dim=2)
 #    B = model.optimizer(10)
-    optimizer = optim.SGD(params=model.parameters(), lr=0.01, momentum=0.9)
-    for _ in range(10):
+    optimizer = optim.SGD(params=model.parameters(), lr=0.05, momentum=0.9)
+    for _ in range(100):
         loss = -model.log_likelihood(model.A) / model.input_size[0]
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         print(loss.item())
 
+    plt.scatter(model.latent_zi.detach().data[:,0],model.latent_zi.detach().data[:,1])
+    plt.scatter(model.latent_zj.detach().data[:,0],model.latent_zj.detach().data[:,1])
 
-
-
+    plt.show()
 
 

@@ -39,16 +39,11 @@ class LSM(nn.Module):
 
     def log_likelihood(self, A):
 
-        #self.p_dist = torch.pairwise_distance(self.latent_zi, self.latent_zj, p=2)
         z_dist = (((torch.unsqueeze(self.latent_zi, 1) - self.latent_zj+1e-06)**2).sum(-1))**0.5
         bias_matrix = torch.unsqueeze(self.beta, 1) + self.gamma
-
         Lambda = bias_matrix - z_dist
         LL = (A*Lambda).sum() - torch.sum(torch.exp(Lambda))
 
-        #LL = (torch.sum(torch.sparse.mm(A, Lambda)) - torch.sum(torch.exp(Lambda)))
-        #LL = torch.sum(torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0), dim=1)
-        #LL = torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0) * torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=1)
         return LL
 ''' 
     def optimizer(self, iterations):

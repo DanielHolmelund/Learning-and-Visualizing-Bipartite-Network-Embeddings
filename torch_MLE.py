@@ -44,17 +44,19 @@ class LSM():
         #LL = torch.sum(torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0), dim=1)
         #LL = torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0) * torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=1)
 
-    def optimizer(self, self.iterations):
+    def optimizer(self, iterations):
         # Implements stochastic gradient descent (optionally with momentum). Nesterov momentum
 
-        for i in range(interations):
+        for _ in range(iterations):
             optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-            loss = -model.LSM.log_likelihood(A)
+            loss = -model.log_likelihood(self.A)/ self.input_size
             loss.backward()
             optimizer.step()
+        return loss
 
 if __name__ == "__main__":
-    model = LSM()
+    model = LSM(A=A, input_size=A.shape[0], latent_dim=2)
+    B = model.optimizer(10)
 
 
 

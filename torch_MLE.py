@@ -1,12 +1,13 @@
 import torch
 import os
 from scipy.io import mmread
-import torch.optim
+import torch.optim as optim
+import torch.nn as nn
 from Adjacency_matrix import Preprocessing
 
 #Creating dataset
 
-os.chdir('/Users/christiandjurhuus/PycharmProjects/Learning-and-Visualizing-Bipartite-Network-Embeddings/Datasets/divorce')
+os.chdir('C:/Users/Daniel/Documents/DTU/Reinforcement/Learning-and-Visualizing-Bipartite-Network-Embeddings/Datasets/divorce')
 
 text_file = 'divorce.mtx'
 
@@ -16,20 +17,23 @@ raw_data = mmread(text_file)
 #print(raw_data)
 
 A = raw_data.todense()
-print(A.shape)
+A = torch.tensor(A)
+#print(A.shape)
 
 class LSM():
-    def __init__(self, A, input_size, latent_dim):
-        self.A = Preprocessing.From_Biadjacency_To_Adjacency(A)
+    def __init__(self, B, input_size, latent_dim):
+        self.A = B
         self.input_size = input_size
         self.latent_dim = latent_dim
 
-        self.beta = torch.nn.Parameter(torch.randn(self.input_size,device=device))
-        self.gamma = torch.nn.Parameter(torch.randn(self.input_size,device=device))
+        self.beta = torch.nn.Parameter(torch.randn(self.input_size))
+        self.gamma = torch.nn.Parameter(torch.randn(self.input_size))
 
-        self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size, self.latent_dim, device=device))
-        self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size, self.latent_dim, device=device))
+        self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size, self.latent_dim))
+        self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size, self.latent_dim))
 
+        self.myparameters = nn.ParameterList([self.latent_zi, self.latent_zj, self.beta, self.gamma])
+        #self.nn_layers = nn.Modulelist([self.latent_zi, self.latent_zj])
 
 
     def log_likelihood(self, A):
@@ -48,15 +52,18 @@ class LSM():
         # Implements stochastic gradient descent (optionally with momentum). Nesterov momentum
 
         for _ in range(iterations):
-            optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+            model = nn.LogSoftmax()
+            optimizer = optim.SGD(params=model.parameters(), lr=0.01, momentum=0.9)
             loss = -model.log_likelihood(self.A)/ self.input_size
             loss.backward()
             optimizer.step()
         return loss
 
 if __name__ == "__main__":
-    model = LSM(A=A, input_size=A.shape[0], latent_dim=2)
+    preproc = Preprocessing()
+    model = LSM(B=preproc.From_Biadjacency_To_Adjacency(A), input_size=A.shape[0], latent_dim=2)
     B = model.optimizer(10)
+
 
 
 

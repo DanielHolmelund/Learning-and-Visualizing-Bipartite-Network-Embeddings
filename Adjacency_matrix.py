@@ -2,8 +2,6 @@ import torch
 
 
 class Preprocessing():
-    def __init__(self, B):
-        self.B = B
 
     def From_Biadjacency_To_Adjacency(self, B):
         """ Transform the Biadjacency matrix to a square adjacency for bipartite graphs.

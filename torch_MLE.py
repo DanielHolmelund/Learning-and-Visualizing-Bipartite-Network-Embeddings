@@ -1,7 +1,8 @@
 import torch
 import os
 from scipy.io import mmread
-
+import torch.optim
+from Adjacency_matrix import Preprocessing
 
 #Creating dataset
 
@@ -19,7 +20,7 @@ print(A.shape)
 
 class LSM():
     def __init__(self, A, input_size, latent_dim):
-        self.A = A
+        self.A = Preprocessing.From_Biadjacency_To_Adjacency(A)
         self.input_size = input_size
         self.latent_dim = latent_dim
 
@@ -31,22 +32,29 @@ class LSM():
 
 
 
-    def log_likelihood(self):
+    def log_likelihood(self, A):
 
         #self.p_dist = torch.pairwise_distance(self.latent_zi, self.latent_zj, p=2)
         z_dist = (((torch.unsqueeze(self.latent_zi, 1) - self.latent_zj)**2).sum(-1))**0.5
 
         Lambda = torch.unsqueeze(self.beta, 1) + self.gamma - abs(z_dist)
 
-        LL = (torch.sum(torch.sparse.mm(A, Lambda)) - torch.sum(torch.exp(Lambda)))
+        LL += torch.unsqueeze(torch.sparse.mm(A, Lambda),1).sum() - torch.sum(torch.exp(Lambda))
+        #LL = (torch.sum(torch.sparse.mm(A, Lambda)) - torch.sum(torch.exp(Lambda)))
+        #LL = torch.sum(torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0), dim=1)
+        #LL = torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0) * torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=1)
 
-        LL = torch.sum(torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0), dim=1)
+    def optimizer(self, self.iterations):
+        # Implements stochastic gradient descent (optionally with momentum). Nesterov momentum
 
-        LL = torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=0) * torch.sum(torch.sparse.mm(A, Lambda) - torch.exp(Lambda), dim=1)
-
-
+        for i in range(interations):
+            optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+            loss = -model.LSM.log_likelihood(A)
+            loss.backward()
+            optimizer.step()
 
 if __name__ == "__main__":
+    model = LSM()
 
 
 

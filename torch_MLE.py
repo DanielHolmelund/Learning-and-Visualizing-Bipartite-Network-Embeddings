@@ -9,8 +9,24 @@ from Adjacency_matrix import Preprocessing
 
 os.chdir('/Users/christiandjurhuus/PycharmProjects/Learning-and-Visualizing-Bipartite-Network-Embeddings/Datasets/divorce')
 
-text_file = 'divorce.mtx'
+text_file = 'Test.mtx'
 
+def loader(text_file):
+    """
+    :param text_file:
+    :return:
+    """
+    f = open(text_file, "r")
+    data = f.read()
+    data = data.split("\n")
+    lenght = len(data)
+    U, V, values = torch.tensor([lenght]), torch.tensor([lenght]), torch.tensor([lenght])
+    for i in range(len(data)):
+        data = data[i].split(" ")
+        U[i] = int(data[0])
+        V[i] = int(data[1])
+        values[i] = int(data[2])
+    return U, V, values
 
 #Loading data and making adjancency matrix
 raw_data = mmread(text_file)

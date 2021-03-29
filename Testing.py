@@ -1,37 +1,21 @@
-
-
+import os
+from scipy.io import mmread
 import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
+"""
+os.chdir("Datasets/Single_cell")
 
-df = pd.DataFrame(
-    {'IP': ['10.20.30.40',
-      '30.50.70.90',
-      '10.20.30.41',
-      '10.20.30.42',
-      '90.80.70.10'],
-     'domain': ['example.org',
-      'site.com',
-      'example.org',
-      'example.org',
-      'website.com'],
-     'subdomain': ['test1', 'something', 'test2', 'test3', 'else']})
+raw_data = mmread("critical_period_neurons_raw_counts.mtx")
+A = raw_data.todense()
+print(A[0:10,0:10])
+df = pd.DataFrame(data=A.astype(float))
+df.to_csv('outfile.csv', sep=' ', header=False, index=False)
+"""
+os.chdir("Datasets/divorce")
 
-B = nx.Graph()
-B.add_nodes_from(df['subdomain'], bipartite=0)
-B.add_nodes_from(df['domain'], bipartite=1)
-B.add_weighted_edges_from(
-    [(row['domain'], row['subdomain'], 1) for idx, row in df.iterrows()],
-    weight='weight')
-
-print(B.edges(data=True))
-# [('test1', 'example.org', {'weight': 1}), ('test3', 'example.org', {'weight': 1}), ('test2', 'example.org', {'weight': 1}), ('website.com', 'else', {'weight': 1}), ('site.com', 'something', {'weight': 1})]
-
-pos = {node:[0, i] for i,node in enumerate(df['domain'])}
-pos.update({node:[1, i] for i,node in enumerate(df['subdomain'])})
-nx.draw(B, pos, with_labels=False)
-for p in pos:  # raise text positions
-    pos[p][1] += 0.25
-nx.draw_networkx_labels(B, pos)
-
-plt.show()
+raw_data = mmread("divorce.mtx")
+A = raw_data.todense()
+B = A[:5,:4]
+df_A = pd.DataFrame(data=A.astype(int))
+df_B = pd.DataFrame(data=B.astype(int))
+df_A.to_csv('outfile_tester.csv', sep=' ', header=False, index=False)
+df_B.to_csv('outfile_tester2.csv', sep=' ', header=False, index=False)

@@ -7,7 +7,7 @@ from Adjacency_matrix import Preprocessing
 
 #Creating dataset
 
-os.chdir('/Users/christiandjurhuus/PycharmProjects/Learning-and-Visualizing-Bipartite-Network-Embeddings/Datasets/divorce')
+os.chdir('Datasets/Single_cell')
 
 text_file = 'Test.mtx'
 
@@ -20,13 +20,16 @@ def loader(text_file):
     data = f.read()
     data = data.split("\n")
     lenght = len(data)
-    U, V, values = torch.tensor([lenght]), torch.tensor([lenght]), torch.tensor([lenght])
-    for i in range(len(data)):
-        data = data[i].split(" ")
-        U[i] = int(data[0])
-        V[i] = int(data[1])
-        values[i] = int(data[2])
+    U, V, values = [], [], []
+    for i in range(lenght):
+        #data = data[i].split(" ")
+        U.append(int(data[i].split(" ")[0]))
+        V.append(int(data[i].split(" ")[1]))
+        values.append(int(data[i].split(" ")[2]))
+    U, V, values = torch.tensor(U), torch.tensor(V), torch.tensor(values)
     return U, V, values
+
+U, V, values = loader(text_file)
 
 #Loading data and making adjancency matrix
 raw_data = mmread(text_file)

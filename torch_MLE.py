@@ -4,16 +4,32 @@ from scipy.io import mmread
 import torch.optim as optim
 import torch.nn as nn
 from Adjacency_matrix import Preprocessing
-import matplotlib.pyplot as plt
-import numpy as np
+
 #Creating dataset
 
-np.random.seed(0)
+os.chdir('Datasets/Single_cell')
 
-os.chdir('/Users/christiandjurhuus/PycharmProjects/Learning-and-Visualizing-Bipartite-Network-Embeddings/Datasets/divorce')
+text_file = 'critical_period_neurons_raw_counts.mtx'
 
-text_file = 'divorce.mtx'
+def loader(text_file):
+    """
+    :param text_file:
+    :return:
+    """
+    f = open(text_file, "r")
+    data = f.read()
+    data = data.split("\n")
+    lenght = len(data)
+    U, V, values = [], [], []
+    for i in range(lenght):
+        #data = data[i].split(" ")
+        U.append(int(data[i].split(" ")[0]))
+        V.append(int(data[i].split(" ")[1]))
+        values.append(int(data[i].split(" ")[2]))
+    U, V, values = torch.tensor(U), torch.tensor(V), torch.tensor(values)
+    return U, V, values
 
+U, V, values = loader(text_file)
 
 #Loading data and making adjancency matrix
 raw_data = mmread(text_file)
@@ -39,6 +55,31 @@ class LSM(nn.Module):
 #        self.myparameters = nn.ParameterList([self.latent_zi, self.latent_zj, self.beta, self.gamma])
         #self.nn_layers = nn.Modulelist([self.latent_zi, self.latent_zj])
 
+    def sample_network(self):
+        # USE torch_sparse lib i.e. : from torch_sparse import spspmm
+
+        # sample for undirected network
+        sample_idx = torch.multinomial(self.sampling_weights, self.sample_size, replacement=False)
+        # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix
+        indices_translator = torch.cat([sample_idx.unsqueeze(0), sample_idx.unsqueeze(0)], 0)
+        # adjacency matrix in edges format
+        edges = torch.cat([self.sparse_i_idx.unsqueeze(0), self.sparse_j_idx.unsqueeze(0)], 0)
+        # matrix multiplication B = Adjacency x Indices translator
+        # see spspmm function, it give a multiplication between two matrices
+        # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
+        indexC, valueC = spspmm(edges, torch.ones(edges.shape[1]), indices_translator,
+                                torch.ones(indices_translator.shape[1]), self.input_size, self.input_size,
+                                self.input_size, coalesced=True)
+        # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
+        indexC, valueC = spspmm(indices_translator, torch.ones(indices_translator.shape[1]), indexC, valueC,
+                                self.input_size, self.input_size, self.input_size, coalesced=True)
+
+        # edge row position
+        sparse_i_sample = indexC[0, :]
+        # edge column position
+        sparse_j_sample = indexC[1, :]
+
+        return sample_idx, sparse_i_sample, sparse_j_sample
 
     def log_likelihood(self, A):
 
@@ -65,17 +106,16 @@ if __name__ == "__main__":
 #    model = LSM(B=preproc.From_Biadjacency_To_Adjacency(A), input_size=A.shape[0], latent_dim=2)
     model = LSM(B=A, input_size=A.shape, latent_dim=2)
 #    B = model.optimizer(10)
-    optimizer = optim.SGD(params=model.parameters(), lr=0.05, momentum=0.9)
-    for _ in range(100):
+    optimizer = optim.SGD(params=model.parameters(), lr=0.01, momentum=0.9)
+    for _ in range(10):
         loss = -model.log_likelihood(model.A) / model.input_size[0]
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         print(loss.item())
 
-    plt.scatter(model.latent_zi.detach().data[:,0],model.latent_zi.detach().data[:,1])
-    plt.scatter(model.latent_zj.detach().data[:,0],model.latent_zj.detach().data[:,1])
 
-    plt.show()
+
+
 
 

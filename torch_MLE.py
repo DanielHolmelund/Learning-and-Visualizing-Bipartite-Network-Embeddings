@@ -52,26 +52,30 @@ class LSM(nn.Module):
         self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size[0], self.latent_dim))
         self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size[1], self.latent_dim))
 
+
+
 #        self.myparameters = nn.ParameterList([self.latent_zi, self.latent_zj, self.beta, self.gamma])
         #self.nn_layers = nn.Modulelist([self.latent_zi, self.latent_zj])
 
     def sample_network(self):
         # USE torch_sparse lib i.e. : from torch_sparse import spspmm
 
-        # sample for undirected network
-        sample_idx = torch.multinomial(self.sampling_weights, self.sample_size, replacement=False)
+        # sample for bipartite network
+        sample_i_idx = torch.multinomial(self.sampling_i_weights, self.sample_i_size, replacement=False)
+        sample_j_idx = torch.multinomial(self.sampling_j_weights, self.sample_j_size, replacement=False)
         # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix
-        indices_translator = torch.cat([sample_idx.unsqueeze(0), sample_idx.unsqueeze(0)], 0)
+        indices_i_translator = torch.cat([sample_i_idx.unsqueeze(0), sample_i_idx.unsqueeze(0)], 0)
+        indices_j_translator = torch.cat([sample_j_idx.unsqueeze(0), sample_j_idx.unsqueeze(0)], 0)
         # adjacency matrix in edges format
         edges = torch.cat([self.sparse_i_idx.unsqueeze(0), self.sparse_j_idx.unsqueeze(0)], 0)
         # matrix multiplication B = Adjacency x Indices translator
         # see spspmm function, it give a multiplication between two matrices
         # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
-        indexC, valueC = spspmm(edges, torch.ones(edges.shape[1]), indices_translator,
-                                torch.ones(indices_translator.shape[1]), self.input_size, self.input_size,
+        indexC, valueC = spspmm(edges, torch.ones(edges.shape[1]), indices_j_translator,
+                                torch.ones(indices_j_translator.shape[1]), self.input_size, self.input_size,
                                 self.input_size, coalesced=True)
         # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
-        indexC, valueC = spspmm(indices_translator, torch.ones(indices_translator.shape[1]), indexC, valueC,
+        indexC, valueC = spspmm(indices_i_translator, torch.ones(indices_i_translator.shape[1]), indexC, valueC,
                                 self.input_size, self.input_size, self.input_size, coalesced=True)
 
         # edge row position
@@ -79,14 +83,17 @@ class LSM(nn.Module):
         # edge column position
         sparse_j_sample = indexC[1, :]
 
-        return sample_idx, sparse_i_sample, sparse_j_sample
+        return sample_i_idx, sample_j_idx, sparse_i_sample, sparse_j_sample
 
-    def log_likelihood(self, A):
-
-        z_dist = (((torch.unsqueeze(self.latent_zi, 1) - self.latent_zj+1e-06)**2).sum(-1))**0.5
-        bias_matrix = torch.unsqueeze(self.beta, 1) + self.gamma
+    def log_likelihood(self):
+        sample_i_idx, sample_j_idx, sparse_i_sample, sparse_j_sample = self.sample_network()
+        z_dist = (((torch.unsqueeze(self.latent_zi[sample_i_idx], 1) - self.latent_zj[sample_j_idx]+1e-06)**2).sum(-1))**0.5
+        bias_matrix = torch.unsqueeze(self.beta[sample_i_idx], 1) + self.gamma[sample_j_idx]
         Lambda = bias_matrix - z_dist
-        LL = (A*Lambda).sum() - torch.sum(torch.exp(Lambda))
+        z_dist_links = (((self.latent_zi[sparse_i_sample] - self.latent_zj[sparse_j_sample]+1e-06)**2).sum(-1))**0.5
+        bias_links = self.beta[sparse_i_sample] + self.gamma[sparse_j_sample]
+        Lambda_links = bias_links - z_dist_links
+        LL = Lambda_links.sum() - torch.sum(torch.exp(Lambda))
 
         return LL
 ''' 

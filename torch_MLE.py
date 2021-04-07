@@ -4,6 +4,7 @@ from scipy.io import mmread
 import torch.optim as optim
 import torch.nn as nn
 from Adjacency_matrix import Preprocessing
+from torch_sparse import spspmm
 
 #Creating dataset
 

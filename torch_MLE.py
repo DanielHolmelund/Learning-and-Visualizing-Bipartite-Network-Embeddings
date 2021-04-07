@@ -4,12 +4,13 @@ from scipy.io import mmread
 import torch.optim as optim
 import torch.nn as nn
 from Adjacency_matrix import Preprocessing
+from torch_sparse import spspmm
 
 #Creating dataset
 
 os.chdir('Datasets/Single_cell')
 
-text_file = 'critical_period_neurons_raw_counts.mtx'
+text_file = 'Test.mtx'
 
 def loader(text_file):
     """
@@ -40,7 +41,7 @@ A = torch.tensor(A)
 #print(A.shape)
 
 class LSM(nn.Module):
-    def __init__(self, B, input_size, latent_dim):
+    def __init__(self, B, input_size, latent_dim, sample_size):
         super(LSM, self).__init__()
         self.A = B
         self.input_size = input_size
@@ -52,12 +53,12 @@ class LSM(nn.Module):
         self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size[0], self.latent_dim))
         self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size[1], self.latent_dim))
 
-#        self.myparameters = nn.ParameterList([self.latent_zi, self.latent_zj, self.beta, self.gamma])
-        #self.nn_layers = nn.Modulelist([self.latent_zi, self.latent_zj])
+        # Sampling
+        self.sample.size = sample_size
+
 
     def sample_network(self):
         # USE torch_sparse lib i.e. : from torch_sparse import spspmm
-
         # sample for undirected network
         sample_idx = torch.multinomial(self.sampling_weights, self.sample_size, replacement=False)
         # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix

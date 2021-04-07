@@ -55,6 +55,31 @@ class LSM(nn.Module):
 #        self.myparameters = nn.ParameterList([self.latent_zi, self.latent_zj, self.beta, self.gamma])
         #self.nn_layers = nn.Modulelist([self.latent_zi, self.latent_zj])
 
+    def sample_network(self):
+        # USE torch_sparse lib i.e. : from torch_sparse import spspmm
+
+        # sample for undirected network
+        sample_idx = torch.multinomial(self.sampling_weights, self.sample_size, replacement=False)
+        # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix
+        indices_translator = torch.cat([sample_idx.unsqueeze(0), sample_idx.unsqueeze(0)], 0)
+        # adjacency matrix in edges format
+        edges = torch.cat([self.sparse_i_idx.unsqueeze(0), self.sparse_j_idx.unsqueeze(0)], 0)
+        # matrix multiplication B = Adjacency x Indices translator
+        # see spspmm function, it give a multiplication between two matrices
+        # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
+        indexC, valueC = spspmm(edges, torch.ones(edges.shape[1]), indices_translator,
+                                torch.ones(indices_translator.shape[1]), self.input_size, self.input_size,
+                                self.input_size, coalesced=True)
+        # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
+        indexC, valueC = spspmm(indices_translator, torch.ones(indices_translator.shape[1]), indexC, valueC,
+                                self.input_size, self.input_size, self.input_size, coalesced=True)
+
+        # edge row position
+        sparse_i_sample = indexC[0, :]
+        # edge column position
+        sparse_j_sample = indexC[1, :]
+
+        return sample_idx, sparse_i_sample, sparse_j_sample
 
     def log_likelihood(self, A):
 

@@ -9,7 +9,7 @@ from Adjacency_matrix import Preprocessing
 
 os.chdir('Datasets/Single_cell')
 
-text_file = 'Test.mtx'
+text_file = 'critical_period_neurons_raw_counts.mtx'
 
 def loader(text_file):
     """

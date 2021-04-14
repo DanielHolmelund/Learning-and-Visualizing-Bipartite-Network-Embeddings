@@ -5,7 +5,6 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 os.chdir("Datasets/Single_cell")
-
 df = pd.read_csv("critical_period_neurons_metadata.csv")
 
 class Categorization():

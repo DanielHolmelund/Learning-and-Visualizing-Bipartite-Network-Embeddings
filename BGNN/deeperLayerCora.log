@@ -2,3 +2,34 @@ Mon, 17 Feb 2020 18:14:12 multiclass_lr.py[line:53] INFO WARN: Column 2,3 in att
 Mon, 17 Feb 2020 18:14:12 multiclass_lr.py[line:58] INFO data.shape
 Mon, 17 Feb 2020 18:14:12 multiclass_lr.py[line:65] INFO Construct:
 Mon, 17 Feb 2020 18:14:39 multiclass_lr.py[line:197] INFO 0.8365019011406845, 0.8084093017668815
+Tue, 13 Apr 2021 15:51:32 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 15:51:32 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 15:51:34 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:08:08 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 16:08:08 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 16:08:09 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:08:30 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 16:08:30 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 16:08:33 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:09:36 multiclass_lr.py[line:197] INFO 0.7414448669201521, 0.6980094020909439
+Tue, 13 Apr 2021 16:11:21 multiclass_lr.py[line:197] INFO 0.6895161290322581, 0.6554509755318381
+Tue, 13 Apr 2021 16:12:59 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 16:12:59 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 16:13:01 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:14:34 multiclass_lr.py[line:197] INFO 0.8376163873370577, 0.84192637091855
+Tue, 13 Apr 2021 16:39:10 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 16:39:10 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 16:39:10 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:39:42 multiclass_lr.py[line:197] INFO 0.8212927756653993, 0.7903011455342449
+Tue, 13 Apr 2021 16:44:20 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 16:44:20 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 16:44:21 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:44:35 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 16:44:35 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 16:44:39 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:44:45 multiclass_lr.py[line:52] INFO WARN: Column 2,3 in attr_data is dropped! If you do not want to drop any column, please uncomment line 39 in logistic_regression.py.
+Tue, 13 Apr 2021 16:44:46 multiclass_lr.py[line:58] INFO data.shape
+Tue, 13 Apr 2021 16:44:49 multiclass_lr.py[line:65] INFO Construct:
+Tue, 13 Apr 2021 16:45:16 multiclass_lr.py[line:197] INFO 0.8250950570342205, 0.8016736424299449
+Tue, 13 Apr 2021 16:46:56 multiclass_lr.py[line:197] INFO 0.7016129032258065, 0.661252288380103
+Tue, 13 Apr 2021 16:47:09 multiclass_lr.py[line:197] INFO 0.8543761638733706, 0.857067408834793

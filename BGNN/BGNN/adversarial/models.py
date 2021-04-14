@@ -69,7 +69,7 @@ class AdversarialLearning(object):
 
     def _loss(self, logits, labels):
         criterion = nn.BCELoss()
-        loss = criterion(logits, labels)
+        loss = criterion(logits, labels.float())
         return loss
 
     def forward_backward(self, real_data, netG_output, step, epoch, iter):

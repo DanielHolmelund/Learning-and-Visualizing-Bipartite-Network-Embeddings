@@ -102,4 +102,3 @@ if __name__ == "__main__":
     PCA._2d_PCA()
     PCA._3d_PCA()
     PCA.variance_explained()
-    x = 1

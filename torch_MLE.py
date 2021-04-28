@@ -52,8 +52,7 @@ class LSM(nn.Module):
 
 
 
-#        self.myparameters = nn.ParameterList([self.latent_zi, self.latent_zj, self.beta, self.gamma])
-        #self.nn_layers = nn.Modulelist([self.latent_zi, self.latent_zj])
+
 
     def sample_network(self):
         # USE torch_sparse lib i.e. : from torch_sparse import spspmm
@@ -90,7 +89,7 @@ class LSM(nn.Module):
         Lambda = bias_matrix - z_dist
         z_dist_links = (((self.latent_zi[sparse_i_sample] - self.latent_zj[sparse_j_sample]+1e-06)**2).sum(-1))**0.5
         bias_links = self.beta[sparse_i_sample] + self.gamma[sparse_j_sample]
-        log_Lambda_links = (bias_links - z_dist_links) * valueC
+        log_Lambda_links = valueC*(bias_links - z_dist_links)
         LL = log_Lambda_links.sum() - torch.sum(torch.exp(Lambda))
 
         return LL
@@ -116,19 +115,19 @@ if __name__ == "__main__":
 
     model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 1000, sample_j_size = 500)
 #    B = model.optimizer(10)
-    optimizer = optim.Adam(params=model.parameters(), lr=0.1)
+    optimizer = optim.Adam(params=model.parameters(), lr=0.01)
     cum_loss = []
-    for _ in range(10000):
+    for _ in range(20000):
         loss = -model.log_likelihood() / model.input_size[0]
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        np.append(cum_loss,loss.item())
+        cum_loss.append(loss.item())
         print('Loss at the',_,'iteration:',loss.item())
 
     #Plot the whole lot
     fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle('Blobs with 10k iteration optimization (Adam optimizer)')
+    fig.suptitle('Blobs with 20k iteration optimization (Adam optimizer)')
     ax1.scatter(X1[:, 0], X1[:, 1], s= 30000 / len(X1), cmap="tab10", color="b")
     ax1.scatter(X2[:, 0], X2[:, 1], s= 30000 / len(X2), cmap="tab10", color="r")
     ax1.set_title("Before LSM")
@@ -139,8 +138,8 @@ if __name__ == "__main__":
     ax2.set_title('After LSM')
     plt.show()
 
-    plt.plot(np.arange(10000),cum_loss)
-    plt.title("Cumulative loss (lr=0.01)")
+    plt.plot(np.arange(20000), cum_loss)
+    plt.title("loss (lr=0.01)")
     plt.show()
 
 

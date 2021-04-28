@@ -11,12 +11,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
-np.random.seed(0)
-torch.manual_seed(0)
+np.random.seed(10)
+torch.manual_seed(10)
 # Create embeddings
-X1, y1 = make_blobs(n_samples=np.repeat(100,10), n_features=2)
-X2, y2 = make_blobs(n_samples=np.repeat(100,5), n_features=2)
+X1, y1 = make_blobs(n_samples=np.repeat(200,10), n_features=2)
+X2, y2 = make_blobs(n_samples=np.repeat(100,10), n_features=2)
 
+#Add random effects
 
 '''# Create plot
 plt.scatter(X1[:, 0], X1[:, 1], s= 30000 / len(X1), cmap="tab10", color="b")
@@ -34,13 +35,16 @@ def generate_network_bias(X1,X2,graph_type='undirected'):
             H: Unique Pairwise Distances
             X: Latent variables vector
     '''
+    #Adding node bias
+
     #Generate distance between nodes across partitions
-    H = (((torch.unsqueeze(X1, 1) - X2 + 1e-06) ** 2).sum(-1)) ** 0.5
+    H = (((torch.unsqueeze(X1, 1) - X2) ** 2).sum(-1)) ** 0.5
 
     z_pdist = H
 
-
-    logit_u = -z_pdist
+    beta = 10
+    gamma = 5
+    logit_u = beta + gamma - z_pdist
 
     #Get the rate for the poisson sampling
     rate = torch.exp(logit_u)
@@ -51,7 +55,11 @@ def generate_network_bias(X1,X2,graph_type='undirected'):
 
     return adj_m
 
+
+
 adj_m=generate_network_bias(torch.from_numpy(X1).float().to(device),
                             torch.from_numpy(X2).float().to(device))
 adj_m=adj_m.cpu().data.numpy()
+
+
 

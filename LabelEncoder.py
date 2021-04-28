@@ -10,7 +10,7 @@ df = pd.read_csv("critical_period_neurons_metadata.csv")
 class Categorization():
     def __init__(self, df):
         self.df = df
-        self.X = df.iloc[:, :].values
+        self.data = df.iloc[:, :].values
 
     def get_type_index(self):
         idx = []
@@ -29,8 +29,8 @@ class Categorization():
         indices = self.get_type_index()
         for col in range(len(df.columns)):
             if col in indices:
-                self.X[:, col] = labelEncoder.fit_transform(self.X[:, col])
-        return self.X
+                self.data[:, col] = labelEncoder.fit_transform(self.data[:, col])
+        return self.data
 
 if __name__ == "__main__":
     cate = Categorization(df)

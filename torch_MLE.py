@@ -8,43 +8,23 @@ from torch_sparse import spspmm
 import pandas as pd
 import numpy as np
 #Creating dataset
+from blobs import *
 
-os.chdir('Datasets/divorce/')
+#os.chdir('Datasets/divorce/')
 
-text_file = 'divorce.mtx'
-
-def loader(text_file):
-    """
-    :param text_file:
-    :return:
-    """
-    f = open(text_file, "r")
-    data = f.read()
-    data = data.split("\n")
-    lenght = len(data)
-    U, V, values = [], [], []
-    for i in range(lenght):
-        #data = data[i].split(" ")
-        U.append(int(data[i].split(" ")[0]))
-        V.append(int(data[i].split(" ")[1]))
-        values.append(int(data[i].split(" ")[2]))
-    U, V, values = torch.tensor(U), torch.tensor(V), torch.tensor(values)
-    return U, V, values
-
-#U, V, values = loader(text_file)
-
+#text_file = 'divorce.mtx'
 
 
 #Loading data and making adjancency matrix
-raw_data = mmread(text_file)
-#print(raw_data)
+#raw_data = mmread(text_file)
 
 
-A = raw_data.todense()
 
-A = torch.tensor(A)
+#A = raw_data.todense()
 
-#print(A.shape)
+#A = torch.tensor(A)
+
+
 
 class LSM(nn.Module):
     def __init__(self, A, input_size, latent_dim, sparse_i_idx, sparse_j_idx, count, sample_i_size, sample_j_size):
@@ -129,22 +109,42 @@ class LSM(nn.Module):
 if __name__ == "__main__":
     preproc = Preprocessing()
 #    model = LSM(B=preproc.From_Biadjacency_To_Adjacency(A), input_size=A.shape[0], latent_dim=2)
-
+    A = adj_m
+    A = torch.tensor(A)
     idx = torch.where(A > 0)
     count = A[idx[0],idx[1]]
 
-    model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 25, sample_j_size = 5)
+    model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 1000, sample_j_size = 500)
 #    B = model.optimizer(10)
-    optimizer = optim.Adam(params=model.parameters(), lr=0.01)
+    optimizer = optim.Adam(params=model.parameters(), lr=0.1)
+    cum_loss = []
     for _ in range(10000):
         loss = -model.log_likelihood() / model.input_size[0]
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        #print(loss.item())
+        np.append(cum_loss,loss.item())
+        print('Loss at the',_,'iteration:',loss.item())
 
-    print(model.latent_zi)
-    print(model.latent_zj)
+    #Plot the whole lot
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle('Blobs with 10k iteration optimization (Adam optimizer)')
+    ax1.scatter(X1[:, 0], X1[:, 1], s= 30000 / len(X1), cmap="tab10", color="b")
+    ax1.scatter(X2[:, 0], X2[:, 1], s= 30000 / len(X2), cmap="tab10", color="r")
+    ax1.set_title("Before LSM")
+    latent_zi = model.latent_zi.cpu().data.numpy()
+    latent_zj = model.latent_zj.cpu().data.numpy()
+    ax2.scatter(latent_zi[:, 0], latent_zi[:, 1], s= 30000 / len(latent_zi), cmap="tab10", color="b")
+    ax2.scatter(latent_zj[:, 0], latent_zj[:, 1], s= 30000 / len(latent_zj), cmap="tab10", color="r")
+    ax2.set_title('After LSM')
+    plt.show()
+
+    plt.plot(np.arange(10000),cum_loss)
+    plt.title("Cumulative loss (lr=0.01)")
+    plt.show()
+
+
+
 
 
 

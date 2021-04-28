@@ -18,7 +18,7 @@ X1, y1 = make_blobs(n_samples=np.repeat(100,10), n_features=2)
 X2, y2 = make_blobs(n_samples=np.repeat(100,5), n_features=2)
 
 
-# Create plot
+'''# Create plot
 plt.scatter(X1[:, 0], X1[:, 1], s= 30000 / len(X1), cmap="tab10", color="b")
 plt.scatter(X2[:, 0], X2[:, 1], s= 30000 / len(X1), cmap="tab10", color="r")
     #plt.axis([0,1,0,1]) ; plt.tight_layout()
@@ -26,7 +26,7 @@ plt.title('True latent variables')
 plt.xlabel('z1')
 plt.ylabel('z2')
 
-plt.show()
+plt.show()'''
 
 
 def generate_network_bias(X1,X2,graph_type='undirected'):
@@ -54,6 +54,4 @@ def generate_network_bias(X1,X2,graph_type='undirected'):
 adj_m=generate_network_bias(torch.from_numpy(X1).float().to(device),
                             torch.from_numpy(X2).float().to(device))
 adj_m=adj_m.cpu().data.numpy()
-print(adj_m)
-print((adj_m!=0).sum())
-print((adj_m==1).sum())
+

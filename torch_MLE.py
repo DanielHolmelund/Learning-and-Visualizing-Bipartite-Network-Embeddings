@@ -10,15 +10,13 @@ import numpy as np
 #Creating dataset
 from blobs import *
 
-#os.chdir('Datasets/divorce/')
+os.chdir('Datasets/divorce/')
 
-#text_file = 'divorce.mtx'
+text_file = 'divorce.mtx'
 
 
 #Loading data and making adjancency matrix
 #raw_data = mmread(text_file)
-
-
 
 #A = raw_data.todense()
 
@@ -117,7 +115,8 @@ if __name__ == "__main__":
 #    B = model.optimizer(10)
     optimizer = optim.Adam(params=model.parameters(), lr=0.01)
     cum_loss = []
-    for _ in range(20000):
+    iterations = 20000
+    for _ in range(iterations):
         loss = -model.log_likelihood() / model.input_size[0]
         optimizer.zero_grad()
         loss.backward()
@@ -138,7 +137,7 @@ if __name__ == "__main__":
     ax2.set_title('After LSM')
     plt.show()
 
-    plt.plot(np.arange(20000), cum_loss)
+    plt.plot(np.arange(iterations), cum_loss)
     plt.title("loss (lr=0.01)")
     plt.show()
 

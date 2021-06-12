@@ -121,47 +121,71 @@ class LSM(nn.Module):
             auc_score = metrics.roc_auc_score(target.cpu().data.numpy(), rate.cpu().data.numpy())
             print('AUC: %.3f' % auc_score)
 
+    #Implementing test log likelihood without mini batching
+    def test_log_likelihood(self, A_test):
+        with torch.no_grad():
+            idx_test = torch.where(torch.isnan(A_test) == False)
+            z_dist = (((torch.unsqueeze(self.latent_zi[idx_test[0]], 1) - self.latent_zj[idx_test[1]] + 1e-06)**2).sum(-1))**0.5
+            bias_matrix = torch.unsqueeze(self.beta[idx_test[0]], 1) + self.gamma[idx_test[1]]
+            Lambda = bias_matrix - z_dist
+            LL_test = (A * Lambda).sum() - torch.sum(torch.exp(Lambda))
+            return LL_test
+
 if __name__ == "__main__":
     A = adj_m
 
     #Binarize data-set if True
-    binarized = True
+    binarized = False
     if binarized:
         A[A>0]= 1
 
-    #Separate train and test data with prob probability of moving a relationship to the test set.
-    prob = 0.2
     A = torch.tensor(A)
-    np.random.seed(0)
-    A_test = A.detach().clone()
-    for i in range(A.size()[0]):
-        for j in range(A.size()[1]):
-            ran = np.random.rand(1)
-            if ran < prob:
-                A[i,j] = np.nan
-            else:
-                A_test[i,j] = np.nan
+
+    #Separate train and test data with prob probability of moving a relationship to the test set. Enable and disable
+    link_pred = True
+    if link_pred:
+        prob = 0.2
+        np.random.seed(0)
+        A_test = A.detach().clone()
+        for i in range(A.size()[0]):
+            for j in range(A.size()[1]):
+                ran = np.random.rand(1)
+                if ran < prob:
+                    A[i,j] = np.nan
+                else:
+                    A_test[i,j] = np.nan
 
 
-    #Get the counts.
+    #Get the counts (only on train data)
     idx = torch.where((A > 0) & (torch.isnan(A) == False))
     count = A[idx[0],idx[1]]
 
+    #Define the model with training data.
     model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 1000, sample_j_size = 500)
-#    B = model.optimizer(10)
+
+    #Deine the optimizer.
     optimizer = optim.Adam(params=model.parameters(), lr=0.01)
     cum_loss = []
+    cum_loss_test = []
+
+    #Run iterations.
     iterations = 100
     for _ in range(iterations):
         loss = -model.log_likelihood() / model.input_size[0]
+        loss_test = -model.test_log_likelihood(A_test) / model.input_size[0]
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         cum_loss.append(loss.item())
+        cum_loss_test.append(loss_test.item())
         print('Loss at the',_,'iteration:',loss.item())
-    model.link_prediction(A_test)
-    #print((model.link_prediction(A_test)==A_test[torch.where(torch.isnan(A_test) == False)[0],torch.where(torch.isnan(A_test) == False)[1]]).sum()/(A_test.size()[0]*A_test.size()[1]))
-    #Plot the whole lot
+        print('Test loss at the', _, 'iteration:', loss_test.item())
+
+    #Binary link-prediction enable and disable;
+    if binarized:
+        model.link_prediction(A_test)
+
+    #Plot the blobs data before and after LSM.
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.suptitle('Blobs with 20k iteration optimization (Adam optimizer)')
     ax1.scatter(X1[:, 0], X1[:, 1], s= 30000 / len(X1), cmap="tab10", color="b")
@@ -174,7 +198,9 @@ if __name__ == "__main__":
     ax2.set_title('After LSM')
     plt.show()
 
+    #Plot the loss at each iteration.
     plt.plot(np.arange(iterations), cum_loss)
+    plt.plot(np.arange(iterations), cum_loss_test)
     plt.title("loss (lr=0.01)")
     plt.show()
 

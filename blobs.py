@@ -14,8 +14,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 np.random.seed(10)
 torch.manual_seed(10)
 # Create embeddings
-X1, y1 = make_blobs(n_samples=np.repeat(200,10), n_features=2)
-X2, y2 = make_blobs(n_samples=np.repeat(100,10), n_features=2)
+X1, y1 = make_blobs(n_samples=np.repeat(100,10), n_features=2)
+X2, y2 = make_blobs(n_samples=np.repeat(50,10), n_features=2)
 
 #Add random effects
 
@@ -42,8 +42,8 @@ def generate_network_bias(X1,X2,graph_type='undirected'):
 
     z_pdist = H
 
-    beta = 10
-    gamma = 5
+    beta = 3
+    gamma = 2.5
     logit_u = beta + gamma - z_pdist
 
     #Get the rate for the poisson sampling
@@ -60,6 +60,7 @@ def generate_network_bias(X1,X2,graph_type='undirected'):
 adj_m=generate_network_bias(torch.from_numpy(X1).float().to(device),
                             torch.from_numpy(X2).float().to(device))
 adj_m=adj_m.cpu().data.numpy()
+
 
 
 

@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 #Creating dataset
 from blobs import *
+from sklearn import metrics
 
 os.chdir('Datasets/divorce/')
 
@@ -48,6 +49,9 @@ class LSM(nn.Module):
 
         self.count = count
 
+        self.z_dist = 0
+        self.Lambda = 0
+
 
 
 
@@ -82,40 +86,72 @@ class LSM(nn.Module):
 
     def log_likelihood(self):
         sample_i_idx, sample_j_idx, sparse_i_sample, sparse_j_sample, valueC = self.sample_network()
-        z_dist = (((torch.unsqueeze(self.latent_zi[sample_i_idx], 1) - self.latent_zj[sample_j_idx]+1e-06)**2).sum(-1))**0.5
+        self.z_dist = (((torch.unsqueeze(self.latent_zi[sample_i_idx], 1) - self.latent_zj[sample_j_idx]+1e-06)**2).sum(-1))**0.5
         bias_matrix = torch.unsqueeze(self.beta[sample_i_idx], 1) + self.gamma[sample_j_idx]
-        Lambda = bias_matrix - z_dist
+        self.Lambda = bias_matrix - self.z_dist
         z_dist_links = (((self.latent_zi[sparse_i_sample] - self.latent_zj[sparse_j_sample]+1e-06)**2).sum(-1))**0.5
         bias_links = self.beta[sparse_i_sample] + self.gamma[sparse_j_sample]
         log_Lambda_links = valueC*(bias_links - z_dist_links)
-        LL = log_Lambda_links.sum() - torch.sum(torch.exp(Lambda))
+        LL = log_Lambda_links.sum() - torch.sum(torch.exp(self.Lambda))
 
         return LL
-''' 
-    def optimizer(self, iterations):
-        # Implements stochastic gradient descent (optionally with momentum). Nesterov momentum
-        for _ in range(iterations):
-            optimizer = optim.SGD(params=self.parameters(), lr=0.01, momentum=0.9)
-            loss = -self.log_likelihood(self.A)/ self.input_size
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        return loss
-'''
+
+    def link_prediction(self, A_test):
+        with torch.no_grad():
+            #Create indexes for test-set relationships
+            idx_test = torch.where(torch.isnan(A_test) == False)
+
+            #Distance measure (euclidian)
+            z_pdist_test = (((self.latent_zi[idx_test[0]] - self.latent_zj[idx_test[1]]+1e-06)**2).sum(-1))**0.5
+
+            #Add bias matrices
+            logit_u_test = -z_pdist_test + self.beta[idx_test[0]] + self.gamma[idx_test[1]]
+
+            #Get the rate
+            rate = torch.exp(logit_u_test)
+
+            #Create target (make sure its in the right order by indexing)
+            target = A_test[idx_test[0], idx_test[1]]
+
+            fpr, tpr, threshold = metrics.roc_curve(target.cpu().data.numpy(), rate.cpu().data.numpy())
+            plt.plot(fpr,tpr)
+            plt.show()
+
+            #Determining AUC score and precision and recall
+            auc_score = metrics.roc_auc_score(target.cpu().data.numpy(), rate.cpu().data.numpy())
+            print('AUC: %.3f' % auc_score)
 
 if __name__ == "__main__":
-    preproc = Preprocessing()
-#    model = LSM(B=preproc.From_Biadjacency_To_Adjacency(A), input_size=A.shape[0], latent_dim=2)
     A = adj_m
+
+    #Binarize data-set if True
+    binarized = True
+    if binarized:
+        A[A>0]= 1
+
+    #Separate train and test data with prob probability of moving a relationship to the test set.
+    prob = 0.2
     A = torch.tensor(A)
-    idx = torch.where(A > 0)
+    np.random.seed(0)
+    A_test = A.detach().clone()
+    for i in range(A.size()[0]):
+        for j in range(A.size()[1]):
+            ran = np.random.rand(1)
+            if ran < prob:
+                A[i,j] = np.nan
+            else:
+                A_test[i,j] = np.nan
+
+
+    #Get the counts.
+    idx = torch.where((A > 0) & (torch.isnan(A) == False))
     count = A[idx[0],idx[1]]
 
     model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 1000, sample_j_size = 500)
 #    B = model.optimizer(10)
     optimizer = optim.Adam(params=model.parameters(), lr=0.01)
     cum_loss = []
-    iterations = 20000
+    iterations = 100
     for _ in range(iterations):
         loss = -model.log_likelihood() / model.input_size[0]
         optimizer.zero_grad()
@@ -123,7 +159,8 @@ if __name__ == "__main__":
         optimizer.step()
         cum_loss.append(loss.item())
         print('Loss at the',_,'iteration:',loss.item())
-
+    model.link_prediction(A_test)
+    #print((model.link_prediction(A_test)==A_test[torch.where(torch.isnan(A_test) == False)[0],torch.where(torch.isnan(A_test) == False)[1]]).sum()/(A_test.size()[0]*A_test.size()[1]))
     #Plot the whole lot
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.suptitle('Blobs with 20k iteration optimization (Adam optimizer)')

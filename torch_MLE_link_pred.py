@@ -113,24 +113,19 @@ class LSM(nn.Module):
             #Create target (make sure its in the right order by indexing)
             target = A_test[idx_test[0], idx_test[1]]
 
-            # Determining AUC score
-            auc_score = metrics.roc_auc_score(target.cpu().data.numpy(), rate.cpu().data.numpy())
-
             fpr, tpr, threshold = metrics.roc_curve(target.cpu().data.numpy(), rate.cpu().data.numpy())
-            plt.plot(fpr,tpr)
-            plt.xlabel('FPR (False Positive Rate)')
-            plt.ylabel('TPR (True Positive Rate')
-            plt.title(f'ROC Curve. AUC: {auc_score}')
-            plt.show()
 
+            #Determining AUC score and precision and recall
+            auc_score = metrics.roc_auc_score(target.cpu().data.numpy(), rate.cpu().data.numpy())
+            return auc_score, fpr, tpr
 
     #Implementing test log likelihood without mini batching
     def test_log_likelihood(self, A_test):
         with torch.no_grad():
             idx_test = torch.where(torch.isnan(A_test) == False)
-            z_dist = (((self.latent_zi[idx_test[0]] - self.latent_zj[idx_test[1]] + 1e-06)**2).sum(-1))**0.5 #Unsqueeze eller ej?
+            z_dist = (((torch.unsqueeze(self.latent_zi[idx_test[0]],1) - self.latent_zj[idx_test[1]] + 1e-06)**2).sum(-1))**0.5
 
-            bias_matrix = self.beta[idx_test[0]] + self.gamma[idx_test[1]]
+            bias_matrix = torch.unsqueeze(self.beta[idx_test[0]],1) + self.gamma[idx_test[1]]
             Lambda = bias_matrix - z_dist
             LL_test = (A_test[idx_test[0],idx_test[1]] * Lambda).sum() - torch.sum(torch.exp(Lambda))
             return LL_test
@@ -139,82 +134,89 @@ if __name__ == "__main__":
     A = adj_m
 
     #Binarize data-set if True
-    binarized = True
-    link_pred = True
-    if binarized:
-        A[A>0]= 1
+    binarized = False
+    link_pred = False
+    cross_val = True
 
-    A = torch.tensor(A)
+    for i in range(5):
+        np.random.seed(i)
+        torch.manual_seed(i)
+        if binarized:
+            A[A>0]= 1
 
-    #Sample test-set from multinomial distribution.
-    if link_pred:
-        A_shape = A.shape
-        num_samples = 400000 #Number of relationships in our test-set
-        idx_i_test = torch.multinomial(input=torch.arange(0,float(A_shape[0])), num_samples=num_samples,
-                                       replacement=True)
-        idx_j_test = torch.multinomial(input=torch.arange(0, float(A_shape[1])), num_samples=num_samples,
-                                       replacement=True)
-        A_test = A.detach().clone()
-        A_test[:] = np.nan #Replace with negative links
-        A_test[idx_i_test,idx_j_test] = A[idx_i_test,idx_j_test]
-        A[idx_i_test,idx_j_test] = np.nan
+        A = torch.tensor(A)
 
-    #Get the counts (only on train data)
-    idx = torch.where((A > 0) & (torch.isnan(A) == False))
-    count = A[idx[0],idx[1]]
-
-    #Define the model with training data.
-    model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 1000, sample_j_size = 500)
-
-    #Deine the optimizer.
-    optimizer = optim.Adam(params=model.parameters(), lr=0.01)
-    cum_loss = []
-    cum_loss_test = []
-
-    #Run iterations.
-    iterations = 1000
-    for _ in range(iterations):
-        loss = -model.log_likelihood() / model.input_size[0]
+        #Sample test-set from multinomial distribution.
         if link_pred:
-            loss_test = -model.test_log_likelihood(A_test) / model.input_size[0] #Skal input size ikke være mindre i testsæt?
-            cum_loss_test.append(loss_test.item())
-            print('Test loss at the', _, 'iteration:', loss_test.item())
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        cum_loss.append(loss.item())
-        print('Loss at the',_,'iteration:',loss.item())
+            A_shape = A.shape
+            num_samples = 400000
+            idx_i_test = torch.multinomial(input=torch.arange(0,float(A_shape[0])), num_samples=num_samples,
+                                           replacement=True)
+            idx_j_test = torch.multinomial(input=torch.arange(0, float(A_shape[1])), num_samples=num_samples,
+                                           replacement=True)
+            A_test = A.detach().clone()
+            A_test[:] = np.nan
+            A_test[idx_i_test,idx_j_test] = A[idx_i_test,idx_j_test]
+            A[idx_i_test,idx_j_test] = np.nan
 
 
-    #Binary link-prediction enable and disable;
-    if binarized:
-        model.link_prediction(A_test)
+        '''start = time.time()
+        if link_pred:
+            prob = 0.2
+            np.random.seed(0)
+            A_test = A.detach().clone()
+            for i in range(A.size()[0]):
+                for j in range(A.size()[1]):
+                    ran = np.random.rand(1)
+                    if ran < prob:
+                        A[i,j] = np.nan
+                    else:
+                        A_test[i,j] = np.nan
+        finish = time.time()
+        print("time",finish-start)'''
 
-    #Plot the blobs data before and after LSM.
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.suptitle('Blobs with 20k iteration optimization (Adam optimizer)')
-    ax1.scatter(X1[:, 0], X1[:, 1], s= 30000 / len(X1), cmap="tab10", color="b")
-    ax1.scatter(X2[:, 0], X2[:, 1], s= 30000 / len(X2), cmap="tab10", color="r")
-    ax1.set_title("Before LSM")
-    latent_zi = model.latent_zi.cpu().data.numpy()
-    latent_zj = model.latent_zj.cpu().data.numpy()
-    ax2.scatter(latent_zi[:, 0], latent_zi[:, 1], s= 30000 / len(latent_zi), cmap="tab10", color="b")
-    ax2.scatter(latent_zj[:, 0], latent_zj[:, 1], s= 30000 / len(latent_zj), cmap="tab10", color="r")
-    ax2.set_title('After LSM')
-    plt.show()
+        #Get the counts (only on train data)
+        idx = torch.where((A > 0) & (torch.isnan(A) == False))
+        count = A[idx[0],idx[1]]
 
-    #Plot the loss at each iteration.
-    plt.plot(np.arange(iterations), cum_loss, label='Train')
-    if link_pred:
-        plt.plot(np.arange(iterations), cum_loss_test, label='Test')
-    plt.xlabel('Iterations')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
+        #Define the model with training data.
+        #Cross-val loop validating 5 seeds;
+
+        model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 1000, sample_j_size = 500)
+
+        #Deine the optimizer.
+        optimizer = optim.Adam(params=model.parameters(), lr=0.001)
+        cum_loss = []
+        cum_loss_test = []
+
+        #Run iterations.
+        iterations = 10
+        for _ in range(iterations):
+            loss = -model.log_likelihood() / model.input_size[0]
+            if link_pred:
+                loss_test = -model.test_log_likelihood(A_test) / model.input_size[0]
+                cum_loss_test.append(loss_test.item())
+                print('Test loss at the', _, 'iteration:', loss_test.item())
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            cum_loss.append(loss.item())
+            print('Loss at the',_,'iteration:',loss.item())
 
 
+        #Binary link-prediction enable and disable;
+        if binarized:
+            auc_score, fpr, tpr = model.link_prediction(A_test)
 
-
-
-
-
+        beta = model.beta.cpu().data.numpy()
+        gamma = model.gamma.cpu().data.numpy()
+        latent_zi = model.latent_zi.cpu().data.numpy()
+        latent_zj = model.latent_zj.cpu().data.numpy()
+        np.savetxt(f"beta_{i}_link_pred_binary.csv", beta, delimiter=",")
+        np.savetxt(f"gamma_{i}_link_pred_binary.csv", gamma, delimiter=",")
+        np.savetxt(f"latent_zi_{i}_link_pred_binary.csv", latent_zi, delimiter=",")
+        np.savetxt(f"latent_zj_{i}_link_pred_binary.csv", latent_zj, delimiter=",")
+        np.savetxt(f"AUC_{i}_link_pred_binary.csv", auc_score, delimiter=",")
+        np.savetxt(f"fpr_{i}_link_pred_binary.csv", fpr, delimiter=",")
+        np.savetxt(f"tpr_{i}_link_pred_binary.csv", tpr, delimiter=",")
+        np.savetxt(f"cum_loss_{i}_link_pred_binary.csv", cum_loss, delimiter=",")

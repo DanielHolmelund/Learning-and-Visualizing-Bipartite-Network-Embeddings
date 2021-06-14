@@ -11,24 +11,11 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
-np.random.seed(10)
-torch.manual_seed(10)
+np.random.seed(0)
+torch.manual_seed(0)
 # Create embeddings
-X1, y1 = make_blobs(n_samples=np.repeat(100,10), n_features=2)
-X2, y2 = make_blobs(n_samples=np.repeat(50,10), n_features=2)
-
-#Add random effects
-
-'''# Create plot
-plt.scatter(X1[:, 0], X1[:, 1], s= 30000 / len(X1), cmap="tab10", color="b")
-plt.scatter(X2[:, 0], X2[:, 1], s= 30000 / len(X1), cmap="tab10", color="r")
-    #plt.axis([0,1,0,1]) ; plt.tight_layout()
-plt.title('True latent variables')
-plt.xlabel('z1')
-plt.ylabel('z2')
-
-plt.show()'''
-
+X1, y1 = make_blobs(n_samples=np.repeat(200,10), n_features=2)
+X2, y2 = make_blobs(n_samples=np.repeat(100,10), n_features=2)
 
 def generate_network_bias(X1,X2,graph_type='undirected'):
     ''' Generate adj matrix, Undirected case
@@ -55,11 +42,11 @@ def generate_network_bias(X1,X2,graph_type='undirected'):
 
     return adj_m
 
-
-
 adj_m=generate_network_bias(torch.from_numpy(X1).float().to(device),
                             torch.from_numpy(X2).float().to(device))
 adj_m=adj_m.cpu().data.numpy()
+
+
 
 
 

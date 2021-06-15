@@ -7,8 +7,7 @@ import torch
 from sklearn.preprocessing import StandardScaler
 scaler = StandardScaler()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#device = torch.device("cpu")
-#torch.set_default_tensor_type('torch.cuda.FloatTensor')
+
 
 
 np.random.seed(0)

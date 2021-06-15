@@ -11,6 +11,7 @@ import numpy as np
 from blobs import *
 from sklearn import metrics
 
+
 os.chdir('Datasets/divorce/')
 
 text_file = 'divorce.mtx'
@@ -123,28 +124,38 @@ class LSM(nn.Module):
     def test_log_likelihood(self, A_test):
         with torch.no_grad():
             idx_test = torch.where(torch.isnan(A_test) == False)
-            z_dist = (((torch.unsqueeze(self.latent_zi[idx_test[0]],1) - self.latent_zj[idx_test[1]] + 1e-06)**2).sum(-1))**0.5
+            z_dist = (((self.latent_zi[idx_test[0]] - self.latent_zj[idx_test[1]] + 1e-06)**2).sum(-1))**0.5 #Unsqueeze eller ej?
 
-            bias_matrix = torch.unsqueeze(self.beta[idx_test[0]],1) + self.gamma[idx_test[1]]
-            Lambda = bias_matrix - z_dist
+            bias_matrix = self.beta[idx_test[0]] + self.gamma[idx_test[1]]
+            Lambda = (bias_matrix - z_dist)
             LL_test = (A_test[idx_test[0],idx_test[1]] * Lambda).sum() - torch.sum(torch.exp(Lambda))
             return LL_test
 
 if __name__ == "__main__":
     A = adj_m
 
+    #Lists to obtain values for AUC, FPR, TPR and loss
+    AUC_scores = []
+    tprs = []
+    base_fpr = np.linspace(0, 1, 101)
+    plt.figure(figsize=(5,5))
+
+    train_loss = []
+    test_loss = []
+
+
     #Binarize data-set if True
-    binarized = False
-    link_pred = False
-    cross_val = True
+    binarized = True
+    link_pred = True
+
+    if binarized:
+        A[A > 0] = 1
+
+    A = torch.tensor(A)
 
     for i in range(5):
         np.random.seed(i)
         torch.manual_seed(i)
-        if binarized:
-            A[A>0]= 1
-
-        A = torch.tensor(A)
 
         #Sample test-set from multinomial distribution.
         if link_pred:
@@ -160,21 +171,6 @@ if __name__ == "__main__":
             A[idx_i_test,idx_j_test] = np.nan
 
 
-        '''start = time.time()
-        if link_pred:
-            prob = 0.2
-            np.random.seed(0)
-            A_test = A.detach().clone()
-            for i in range(A.size()[0]):
-                for j in range(A.size()[1]):
-                    ran = np.random.rand(1)
-                    if ran < prob:
-                        A[i,j] = np.nan
-                    else:
-                        A_test[i,j] = np.nan
-        finish = time.time()
-        print("time",finish-start)'''
-
         #Get the counts (only on train data)
         idx = torch.where((A > 0) & (torch.isnan(A) == False))
         count = A[idx[0],idx[1]]
@@ -185,12 +181,12 @@ if __name__ == "__main__":
         model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx= idx[0], sparse_j_idx=idx[1], count=count, sample_i_size = 1000, sample_j_size = 500)
 
         #Deine the optimizer.
-        optimizer = optim.Adam(params=model.parameters(), lr=0.001)
+        optimizer = optim.Adam(params=model.parameters(), lr=0.01)
         cum_loss = []
         cum_loss_test = []
 
         #Run iterations.
-        iterations = 10
+        iterations = 20000
         for _ in range(iterations):
             loss = -model.log_likelihood() / model.input_size[0]
             if link_pred:
@@ -204,19 +200,83 @@ if __name__ == "__main__":
             print('Loss at the',_,'iteration:',loss.item())
 
 
+        train_loss.append(cum_loss)
+        test_loss.append(cum_loss_test)
+
         #Binary link-prediction enable and disable;
         if binarized:
             auc_score, fpr, tpr = model.link_prediction(A_test)
 
-        beta = model.beta.cpu().data.numpy()
-        gamma = model.gamma.cpu().data.numpy()
-        latent_zi = model.latent_zi.cpu().data.numpy()
-        latent_zj = model.latent_zj.cpu().data.numpy()
-        np.savetxt(f"beta_{i}_link_pred_binary.csv", beta, delimiter=",")
-        np.savetxt(f"gamma_{i}_link_pred_binary.csv", gamma, delimiter=",")
-        np.savetxt(f"latent_zi_{i}_link_pred_binary.csv", latent_zi, delimiter=",")
-        np.savetxt(f"latent_zj_{i}_link_pred_binary.csv", latent_zj, delimiter=",")
-        np.savetxt(f"AUC_{i}_link_pred_binary.csv", auc_score, delimiter=",")
-        np.savetxt(f"fpr_{i}_link_pred_binary.csv", fpr, delimiter=",")
-        np.savetxt(f"tpr_{i}_link_pred_binary.csv", tpr, delimiter=",")
-        np.savetxt(f"cum_loss_{i}_link_pred_binary.csv", cum_loss, delimiter=",")
+        AUC_scores.append(auc_score)
+        plt.plot(fpr, tpr, 'b', alpha=0.15)
+        tpr = np.interp(base_fpr, fpr, tpr)
+        tpr[0] = 0.0
+        tprs.append(tpr)
+
+
+        #beta = model.beta.cpu().data.numpy()
+        #gamma = model.gamma.cpu().data.numpy()
+        #latent_zi = model.latent_zi.cpu().data.numpy()
+        #latent_zj = model.latent_zj.cpu().data.numpy()
+        #np.savetxt(f"beta_{i}_link_pred_binary.csv", beta, delimiter=",")
+        #np.savetxt(f"gamma_{i}_link_pred_binary.csv", gamma, delimiter=",")
+        #np.savetxt(f"latent_zi_{i}_link_pred_binary.csv", latent_zi, delimiter=",")
+        #np.savetxt(f"latent_zj_{i}_link_pred_binary.csv", latent_zj, delimiter=",")
+        #np.savetxt(f"fpr_{i}_link_pred_binary.csv", fpr, delimiter=",")
+        #np.savetxt(f"tpr_{i}_link_pred_binary.csv", tpr, delimiter=",")
+        #np.savetxt(f"cum_loss_{i}_link_pred_binary.csv", cum_loss, delimiter=",")
+        #np.savetxt(f"cum_loss_test_{i}_link_pred_binary.csv", cum_loss_test, delimiter=",")
+
+    #np.savetxt(f"AUC_{i}_link_pred_binary.csv", AUC_scores, delimiter=",")
+
+
+
+    #Plotting the average roc curve as a result of the cross-validation
+
+    tprs = np.array(tprs)
+    mean_tprs = tprs.mean(axis=0)
+    std = tprs.std(axis=0)
+
+    #USing standard deviation as error bars
+    tprs_upper = np.minimum(mean_tprs + std, 1)
+    tprs_lower = mean_tprs - std
+
+    plt.plot(base_fpr, mean_tprs, 'b', label='Mean ROC-curve')
+    plt.fill_between(base_fpr, tprs_lower, tprs_upper, color='grey', alpha=0.3)
+
+    plt.plot([0, 1], [0, 1],'r--', label='Random classifier')
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.axes().set_aspect('equal', 'datalim')
+    plt.grid()
+    plt.legend()
+    plt.show()
+    plt.savefig('Average_ROC_curve.png')
+
+    #Plotting the average loss based on the cross validation
+    train_loss = np.array(train_loss)
+    test_loss = np.array(test_loss)
+    mean_train_loss = train_loss.mean(axis=0)
+    std_train_loss = train_loss.std(axis=0)
+    mean_train_loss_upr = mean_train_loss + std_train_loss
+    mean_train_loss_lwr = mean_train_loss - std_train_loss
+
+    mean_test_loss = test_loss.mean(axis=0)
+    std_test_loss = test_loss.std(axis=0)
+    mean_test_loss_upr = mean_test_loss + std_test_loss
+    mean_test_loss_lwr = mean_test_loss - std_test_loss
+
+
+    plt.plot(np.arange(iterations), mean_train_loss, 'b', label='Mean training loss')
+    plt.fill_between(np.arange(iterations), mean_train_loss_lwr, mean_train_loss_upr, color='b', alpha=0.3)
+    plt.plot(np.arange(iterations), mean_test_loss, 'r', label='Mean test loss')
+    plt.fill_between(np.arange(iterations), mean_test_loss_lwr, mean_test_loss_upr, color='r', alpha=0.3)
+    plt.xlim([0, iterations])
+    plt.ylabel('Loss')
+    plt.xlabel('Iterations')
+    plt.grid()
+    plt.legend()
+    plt.show()
+    plt.savefig('Average_loss.png')

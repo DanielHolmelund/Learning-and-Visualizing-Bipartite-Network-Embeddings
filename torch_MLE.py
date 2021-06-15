@@ -172,7 +172,7 @@ if __name__ == "__main__":
     cum_loss_test = []
 
     #Run iterations.
-    iterations = 1000
+    iterations = 20000
     for _ in range(iterations):
         loss = -model.log_likelihood() / model.input_size[0]
         if link_pred:

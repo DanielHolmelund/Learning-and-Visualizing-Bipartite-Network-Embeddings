@@ -178,7 +178,7 @@ if __name__ == "__main__":
             np.savetxt(f"binary_link_pred_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
             np.savetxt(f"binary_link_pred_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
             np.savetxt(f"binary_link_pred_output/cum_loss_test_{_}.txt", deepcopy(model.cum_loss_test.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/auc_score_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
             np.savetxt(f"binary_link_pred_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
 
 

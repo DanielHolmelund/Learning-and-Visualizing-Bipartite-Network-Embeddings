@@ -119,6 +119,6 @@ if __name__ == "__main__":
             np.savetxt(f"model_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
             np.savetxt(f"model_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
             np.savetxt(f"model_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
-            np.savetxt(f"model_output/cum_loss_{_}.txt", cum_loss.detach(), delimiter=" ")
+            np.savetxt(f"model_output/cum_loss_{_}.txt", cum_loss, delimiter=" ")
 
 

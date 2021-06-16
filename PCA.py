@@ -30,7 +30,7 @@ class PCA():
         self.y = np.asarray([self.classDict[value] for value in self.classLabels])
 
         # Perform singular value decomposition (SVD)
-        self.U, self.S, self.V = svd(self.data_norm,full_matrices=False)
+        self.U, self.S, self.V = svd(self.data_norm, full_matrices=False)
         self.V = self.V.T
         self.Z = self.data_norm @ self.V
         self.N, self.M = self.data_norm.shape

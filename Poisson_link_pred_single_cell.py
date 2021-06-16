@@ -118,13 +118,18 @@ class LSM(nn.Module):
 
 
 if __name__ == "__main__":
-    A = np.loadtxt("raw_neuron_count_matrix.csv", delimiter=" ")
-    A = torch.tensor(A)
-    A = A.to(device)
+
+    idx_i = np.loadtxt("data_0.txt", delimiter=" ")
+    idx_j = np.loadtxt("data_1.txt", delimiter=" ")
+    value = np.loadtxt("values.txt", delimiter=" ")
+
+    idx_i = torch.tensor(idx_i).to(device).long()
+    idx_j = torch.tensor(idx_j).to(device).long()
+    value = torch.tensor(idx_j).to(device)
 
     # Binarize data-set if True
     binarized = False
-    link_pred = True
+    link_pred = False
 
     # Lists to obtain values for AUC, FPR, TPR and loss
     AUC_scores = []
@@ -139,92 +144,38 @@ if __name__ == "__main__":
     if binarized:
         A[A > 0] = 1
 
-    for i in range(5):
-        np.random.seed(i)
-        torch.manual_seed(i)
 
-        # Sample test-set from multinomial distribution.
-        if link_pred:
-            A_shape = A.shape
-            num_samples = 400000
-            idx_i_test = torch.multinomial(input=torch.arange(0, float(A_shape[0])), num_samples=num_samples,
-                                           replacement=True)
-            idx_j_test = torch.multinomial(input=torch.arange(0, float(A_shape[1])), num_samples=num_samples,
-                                           replacement=True)
-            A_test = A.detach().clone()
-            A_test[:] = np.nan
-            A_test[idx_i_test, idx_j_test] = A[idx_i_test, idx_j_test]
-            A[idx_i_test, idx_j_test] = np.nan
+    # Define the model with training data.
+    # Cross-val loop validating 5 seeds;
 
-        # Get the counts (only on train data)
-        idx = torch.where((A > 0) & (torch.isnan(A) == False))
-        count = A[idx[0], idx[1]]
+    model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=idx_i, sparse_j_idx=idx_j, count=value,
+                sample_i_size=5000, sample_j_size=5000)
 
-        # Define the model with training data.
-        # Cross-val loop validating 5 seeds;
+    # Deine the optimizer.
+    optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+    cum_loss = []
+    cum_loss_test = []
 
-        model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx=idx[0], sparse_j_idx=idx[1], count=count,
-                    sample_i_size=5000, sample_j_size=5000)
+    # Run iterations.
+    iterations = 100000
+    from copy import deepcopy
 
-        # Deine the optimizer.
-        optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
-        cum_loss = []
-        cum_loss_test = []
+    for _ in range(iterations):
+        loss = -model.log_likelihood()
+        # if link_pred:
+        # loss_test = -model.test_log_likelihood(A_test)
+        # cum_loss_test.append(loss_test.item())
+        # print('Test loss at the', _, 'iteration:', loss_test.item())
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
+        if _ % 1000 == 0:
+            np.savetxt(f"model_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
+        # print('Loss at the',_,'iteration:',loss.item())
 
-        # Run iterations.
-        iterations = 2
-        for _ in range(iterations):
-            loss = -model.log_likelihood()
-            if link_pred:
-                loss_test = -model.test_log_likelihood(A_test)
-                cum_loss_test.append(loss_test.item())
-                # print('Test loss at the', _, 'iteration:', loss_test.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
-            # print('Loss at the',_,'iteration:',loss.item())
 
-        train_loss.append(cum_loss)
-
-        # Binary link-prediction enable and disable;
-        if binarized:
-            auc_score, fpr, tpr = model.link_prediction(A_test)
-
-    # Plotting the average loss based on the cross validation
-    train_loss = np.array(train_loss)
-    mean_train_loss = train_loss.mean(axis=0)
-    std_train_loss = train_loss.std(axis=0)
-    mean_train_loss_upr = mean_train_loss + std_train_loss
-    mean_train_loss_lwr = mean_train_loss - std_train_loss
-
-    plt.plot(np.arange(iterations), mean_train_loss, 'b', label='Mean training loss')
-    plt.fill_between(np.arange(iterations), mean_train_loss_lwr, mean_train_loss_upr, color='b', alpha=0.3)
-    plt.xlim([0, iterations])
-    plt.ylabel('Loss')
-    plt.xlabel('Iterations')
-    plt.grid()
-    plt.legend()
-    plt.savefig('Average_loss.png')
-
-    for j in range(5):
-        plt.plot(train_loss[j])
-    plt.xlim([0, iterations])
-    plt.ylabel('Loss')
-    plt.xlabel('Iterations')
-    plt.grid()
-    plt.savefig("init_loss")
-
-    latent_zi = model.latent_zi.cpu().data.numpy()
-    latent_zj = model.latent_zj.cpu().data.numpy()
-    np.savetxt(f"latent_zi_{iterations}_fixed.csv", latent_zi, delimiter=",")
-    np.savetxt(f"latent_zj_{iterations}_fixed.csv", latent_zj, delimiter=",")
-    plt.scatter(latent_zi[:, 0], latent_zi[:, 1], cmap="tab10", color="b")
-    plt.scatter(latent_zj[:, 0], latent_zj[:, 1], cmap="tab10", color="r")
-    plt.title('LSM')
-    plt.savefig(f"LSM_graph_{iterations}_fixed.png")
-
-    beta_ = model.beta.cpu().data.numpy()
-    gamma_ = model.gamma.cpu().data.numpy()
-    np.savetxt(f"beta_{iterations}_fixed.csv", beta_, delimiter=",")
-    np.savetxt(f"gamma_{iterations}_fixed.csv", gamma_, delimiter=",")

@@ -122,9 +122,15 @@ if __name__ == "__main__":
     A = torch.tensor(A)
     A = A.to(device)
 
+    idx_i = edge_list[:,0]
+    idx_j = edge_list[:,1]
+    value = edge_list[:,2]
+    i_shape = 20526
+    j_shape = 157430
+
     # Binarize data-set if True
     binarized = False
-    link_pred = True
+    link_pred = False
 
     # Lists to obtain values for AUC, FPR, TPR and loss
     AUC_scores = []
@@ -137,7 +143,7 @@ if __name__ == "__main__":
 
     learning_rate = 0.01  # Learning rate for adam
     if binarized:
-        A[A > 0] = 1
+        value[:] = 1
 
     for i in range(5):
         np.random.seed(i)
@@ -145,7 +151,7 @@ if __name__ == "__main__":
 
         # Sample test-set from multinomial distribution.
         if link_pred:
-            A_shape = A.shape
+            A_shape = (i_shape,j_shape)
             num_samples = 400000
             idx_i_test = torch.multinomial(input=torch.arange(0, float(A_shape[0])), num_samples=num_samples,
                                            replacement=True)
@@ -157,16 +163,15 @@ if __name__ == "__main__":
             A[idx_i_test, idx_j_test] = np.nan
 
         # Get the counts (only on train data)
-        idx = torch.where((A > 0) & (torch.isnan(A) == False))
-        count = A[idx[0], idx[1]]
+
 
         # Define the model with training data.
         # Cross-val loop validating 5 seeds;
 
-        model = LSM(A=A, input_size=A.shape, latent_dim=2, sparse_i_idx=idx[0], sparse_j_idx=idx[1], count=count,
+        model = LSM(input_size=(i_shape,j_shape), latent_dim=2, sparse_i_idx=idx_i, sparse_j_idx=idx_j, count=value,
                     sample_i_size=5000, sample_j_size=5000)
 
-        # Deine the optimizer.
+        # Define the optimizer.
         optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
         cum_loss = []
         cum_loss_test = []

@@ -14,9 +14,8 @@ if device == "cuda:0":
 
 
 class LSM(nn.Module):
-    def __init__(self, A, input_size, latent_dim, sparse_i_idx, sparse_j_idx, count, sample_i_size, sample_j_size):
+    def __init__(self, input_size, latent_dim, sparse_i_idx, sparse_j_idx, count, sample_i_size, sample_j_size):
         super(LSM, self).__init__()
-        self.A = A
         self.input_size = input_size
         self.latent_dim = latent_dim
 
@@ -82,40 +81,6 @@ class LSM(nn.Module):
 
         return LL
 
-    def link_prediction(self, A_test):
-        with torch.no_grad():
-            # Create indexes for test-set relationships
-            idx_test = torch.where(torch.isnan(A_test) == False)
-
-            # Distance measure (euclidian)
-            z_pdist_test = (((self.latent_zi[idx_test[0]] - self.latent_zj[idx_test[1]] + 1e-06) ** 2).sum(-1)) ** 0.5
-
-            # Add bias matrices
-            logit_u_test = -z_pdist_test + self.beta[idx_test[0]] + self.gamma[idx_test[1]]
-
-            # Get the rate
-            rate = torch.exp(logit_u_test)
-
-            # Create target (make sure its in the right order by indexing)
-            target = A_test[idx_test[0], idx_test[1]]
-
-            fpr, tpr, threshold = metrics.roc_curve(target.cpu().data.numpy(), rate.cpu().data.numpy())
-
-            # Determining AUC score and precision and recall
-            auc_score = metrics.roc_auc_score(target.cpu().data.numpy(), rate.cpu().data.numpy())
-            return auc_score, fpr, tpr
-
-    # Implementing test log likelihood without mini batching
-    def test_log_likelihood(self, A_test):
-        with torch.no_grad():
-            idx_test = torch.where(torch.isnan(A_test) == False)
-            z_dist = (((self.latent_zi[idx_test[0]] - self.latent_zj[idx_test[1]] + 1e-06) ** 2).sum(-1)) ** 0.5
-
-            bias_matrix = self.beta[idx_test[0]] + self.gamma[idx_test[1]]
-            Lambda = (bias_matrix - z_dist)
-            LL_test = (A_test[idx_test[0], idx_test[1]] * Lambda).sum() - torch.sum(torch.exp(Lambda))
-            return LL_test
-
 
 if __name__ == "__main__":
 
@@ -125,58 +90,35 @@ if __name__ == "__main__":
 
     idx_i = torch.tensor(idx_i).to(device).long()
     idx_j = torch.tensor(idx_j).to(device).long()
-    value = torch.tensor(idx_j).to(device)
-
-    # Binarize data-set if True
-    binarized = False
-    link_pred = False
-
-    # Lists to obtain values for AUC, FPR, TPR and loss
-    AUC_scores = []
-    tprs = []
-    base_fpr = np.linspace(0, 1, 101)
-    plt.figure(figsize=(5, 5))
-
-    train_loss = []
-    test_loss = []
+    value = torch.tensor(value).to(device)
 
     learning_rate = 0.01  # Learning rate for adam
-    if binarized:
-        A[A > 0] = 1
 
-    if 1 == 1:
+    # Define the model with training data.
+    torch.manual_seed(0)
 
-        # Define the model with training data.
-        # Cross-val loop validating 5 seeds;
+    model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=idx_i, sparse_j_idx=idx_j, count=value,
+                sample_i_size=5000, sample_j_size=5000)
 
-        model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=idx_i, sparse_j_idx=idx_j, count=value,
-                    sample_i_size=5000, sample_j_size=5000)
+    # Deine the optimizer.
+    optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+    cum_loss = []
 
-        # Deine the optimizer.
-        optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
-        cum_loss = []
-        cum_loss_test = []
+    # Run iterations.
+    iterations = 100000
+    from copy import deepcopy
 
-        # Run iterations.
-        iterations = 100000
-        from copy import deepcopy
-
-        for _ in range(iterations):
-            loss = -model.log_likelihood()
-            # if link_pred:
-            # loss_test = -model.test_log_likelihood(A_test)
-            # cum_loss_test.append(loss_test.item())
-            # print('Test loss at the', _, 'iteration:', loss_test.item())
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
-            if _ % 1000 == 0:
-                np.savetxt(f"model_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
-                np.savetxt(f"model_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
-                np.savetxt(f"model_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
-                np.savetxt(f"model_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
-                np.savetxt(f"model_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
-            # print('Loss at the',_,'iteration:',loss.item())
+    for _ in range(iterations):
+        loss = -model.log_likelihood()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
+        if _ % 1000 == 0:
+            np.savetxt(f"model_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
 
 

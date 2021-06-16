@@ -141,10 +141,10 @@ if __name__ == "__main__":
     torch.manual_seed(0)
 
     model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=train_idx_i, sparse_j_idx=train_idx_j, count=train_value,
-                sample_i_size=5000, sample_j_size=5000)
+                sample_i_size=5000, sample_j_size=5000).to(device)
 
     #Deine the optimizer.
-    optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(params=list(model.parameters()), lr=learning_rate)
     cum_loss_train = []
     cum_loss_test = []
 

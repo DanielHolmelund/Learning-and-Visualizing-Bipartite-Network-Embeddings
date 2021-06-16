@@ -94,18 +94,18 @@ class LSM(nn.Module):
 
 if __name__ == "__main__":
     #Train set:
-    train_idx_i = np.loadtxt("data_train_0.txt", delimiter=" ")
-    train_idx_j = np.loadtxt("data_train_1.txt", delimiter=" ")
-    train_value = np.loadtxt("values_train.txt", delimiter=" ")
+    train_idx_i = np.loadtxt("/work3/s194245/data_train_0.txt", delimiter=" ")
+    train_idx_j = np.loadtxt("/work3/s194245/data_train_1.txt", delimiter=" ")
+    train_value = np.loadtxt("/work3/s194245/values_train.txt", delimiter=" ")
 
     train_idx_i = torch.tensor(train_idx_i).to(device).long()
     train_idx_j = torch.tensor(train_idx_j).to(device).long()
     train_value = torch.tensor(train_value).to(device)
 
     #Test set:
-    test_idx_i = np.loadtxt("data_test_0.txt", delimiter=" ")
-    test_idx_j = np.loadtxt("data_test_1.txt", delimiter=" ")
-    test_value = np.loadtxt("values_test.txt", delimiter=" ")
+    test_idx_i = np.loadtxt("/work3/s194245/data_test_0.txt", delimiter=" ")
+    test_idx_j = np.loadtxt("/work3/s194245/data_test_1.txt", delimiter=" ")
+    test_value = np.loadtxt("/work3/s194245/values_test.txt", delimiter=" ")
 
     test_idx_i = torch.tensor(test_idx_i).to(device).long()
     test_idx_j = torch.tensor(test_idx_j).to(device).long()
@@ -144,8 +144,8 @@ if __name__ == "__main__":
             np.savetxt(f"poisson_link_pred_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
             np.savetxt(f"poisson_link_pred_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
             np.savetxt(f"poisson_link_pred_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
-            np.savetxt(f"poisson_link_pred_output/cum_loss_train_{_}.txt", deepcopy(cum_loss_train.detach().data), delimiter=" ")
-            np.savetxt(f"poisson_link_pred_output/cum_loss_test_{_}.txt", deepcopy(cum_loss_test.detach().data), delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/cum_loss_train_{_}.txt", cum_loss_train, delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/cum_loss_test_{_}.txt", cum_loss_test, delimiter=" ")
 
 
 

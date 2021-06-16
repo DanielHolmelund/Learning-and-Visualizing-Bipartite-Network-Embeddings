@@ -131,21 +131,21 @@ if __name__ == "__main__":
     from copy import deepcopy
 
     for _ in range(iterations):
-        loss = -model.log_likelihood() / (model.input_size[0]*model.input_size[1]-323140818)
+        loss = -model.log_likelihood()
         loss_test = -model.test_log_likelihood(test_idx_i, test_idx_j, test_value) / 323140818
         cum_loss_test.append(loss_test.item())
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        cum_loss_train.append(loss.item())
+        cum_loss_train.append(loss.item() / (model.input_size[0]*model.input_size[1]-323140818))
         if _ % 1000 == 0:
-            np.savetxt(f"binary_link_pred_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/cum_loss_train_{_}.txt", deepcopy(cum_loss_train.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/cum_loss_test_{_}.txt", deepcopy(cum_loss_test.detach().data), delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/cum_loss_train_{_}.txt", deepcopy(cum_loss_train.detach().data), delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/cum_loss_test_{_}.txt", deepcopy(cum_loss_test.detach().data), delimiter=" ")
 
 
 

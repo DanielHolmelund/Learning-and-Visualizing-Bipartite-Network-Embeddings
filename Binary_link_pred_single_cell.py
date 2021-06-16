@@ -134,16 +134,6 @@ if __name__ == "__main__":
     #Binarize data-set
     test_value[:] = 1
 
-
-    # Lists to obtain values for AUC, FPR, TPR and loss
-    AUC_scores = []
-    tprs = []
-    base_fpr = np.linspace(0, 1, 101)
-    plt.figure(figsize=(5, 5))
-
-    train_loss = []
-    test_loss = []
-
     learning_rate = 0.01  # Learning rate for adam
 
     # Define the model with training data.
@@ -155,7 +145,7 @@ if __name__ == "__main__":
 
     #Deine the optimizer.
     optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
-    cum_loss = []
+    cum_loss_train = []
     cum_loss_test = []
 
     # Run iterations.
@@ -164,22 +154,23 @@ if __name__ == "__main__":
 
     for _ in range(iterations):
         loss = -model.log_likelihood() / (model.input_size[0]*model.input_size[1]-323140818)
-        loss_test = -model.test_log_likelihood(test_idx_i,test_idx_j,test_value) / 323140818
+        loss_test = -model.test_log_likelihood(test_idx_i, test_idx_j, test_value) / 323140818
         cum_loss_test.append(loss_test.item())
         auc_score, tpr, fpr = model.link_prediction(test_idx_i, test_idx_j, test_value)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
+        cum_loss_train.append(loss.item())
         if _ % 1000 == 0:
             np.savetxt(f"binary_link_pred_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
             np.savetxt(f"binary_link_pred_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
             np.savetxt(f"binary_link_pred_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
             np.savetxt(f"binary_link_pred_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/cum_loss_test_{_}.txt", deepcopy(model.cum_loss_test.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/auc_score_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/cum_loss_{_}.txt", deepcopy(model.cum_loss.detach().data), delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/cum_loss_train_{_}.txt", deepcopy(cum_loss_train.detach().data), delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/cum_loss_test_{_}.txt", deepcopy(cum_loss_test.detach().data), delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/auc_score_{_}.txt", auc_score, delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/tpr_{_}.txt", tpr, delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/fpr_{_}.txt", fpr, delimiter=" ")
 
 
 

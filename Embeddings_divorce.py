@@ -20,11 +20,11 @@ class LSM(nn.Module):
         self.input_size = input_size
         self.latent_dim = latent_dim
 
-        self.beta = torch.nn.Parameter(torch.randn(self.input_size[0])).to(device)
-        self.gamma = torch.nn.Parameter(torch.randn(self.input_size[1])).to(device)
+        self.beta = torch.nn.Parameter(torch.randn(self.input_size[0]))
+        self.gamma = torch.nn.Parameter(torch.randn(self.input_size[1]))
 
-        self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size[0], self.latent_dim)).to(device)
-        self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size[1], self.latent_dim)).to(device)
+        self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size[0], self.latent_dim))
+        self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size[1], self.latent_dim))
         # Change sample weights for each partition
         self.sampling_i_weights = torch.ones(input_size[0]).to(device)
         self.sampling_j_weights = torch.ones(input_size[1]).to(device)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     torch.manual_seed(0)
 
     model = LSM(input_size=(50, 9), latent_dim=2, sparse_i_idx=idx_i, sparse_j_idx=idx_j, count=value,
-                sample_i_size=30, sample_j_size=9).to(device)
+                sample_i_size=30, sample_j_size=6).to(device)
 
     # Deine the optimizer.
     optimizer = optim.Adam(params=list(model.parameters()), lr=learning_rate)
@@ -124,10 +124,10 @@ if __name__ == "__main__":
         cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
         print("hey")
         if _ % 1000 == 0:
-            np.savetxt(f"model_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
-            np.savetxt(f"model_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
-            np.savetxt(f"model_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
-            np.savetxt(f"model_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
+            np.savetxt(f"model_output/latent_i_{_}.txt", model.latent_zi.detach().cpu().data, delimiter=" ")
+            np.savetxt(f"model_output/latent_j_{_}.txt", model.latent_zj.detach().cpu().data, delimiter=" ")
+            np.savetxt(f"model_output/beta_{_}.txt", model.beta.detach().cpu().data, delimiter=" ")
+            np.savetxt(f"model_output/gamma_{_}.txt", model.gamma.detach().cpu().data, delimiter=" ")
             np.savetxt(f"model_output/cum_loss_{_}.txt", cum_loss, delimiter=" ")
 
 

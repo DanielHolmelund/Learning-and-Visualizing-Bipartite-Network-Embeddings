@@ -20,11 +20,11 @@ class LSM(nn.Module):
         self.input_size = input_size
         self.latent_dim = latent_dim
 
-        self.beta = torch.nn.Parameter(torch.randn(self.input_size[0])).to(device)
-        self.gamma = torch.nn.Parameter(torch.randn(self.input_size[1])).to(device)
+        self.beta = torch.nn.Parameter(torch.randn(self.input_size[0], device=device))
+        self.gamma = torch.nn.Parameter(torch.randn(self.input_size[1], device=device))
 
-        self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size[0], self.latent_dim)).to(device)
-        self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size[1], self.latent_dim)).to(device)
+        self.latent_zi = torch.nn.Parameter(torch.randn(self.input_size[0], self.latent_dim, device=device))
+        self.latent_zj = torch.nn.Parameter(torch.randn(self.input_size[1], self.latent_dim, device=device))
         # Change sample weights for each partition
         self.sampling_i_weights = torch.ones(input_size[0]).to(device)
         self.sampling_j_weights = torch.ones(input_size[1]).to(device)

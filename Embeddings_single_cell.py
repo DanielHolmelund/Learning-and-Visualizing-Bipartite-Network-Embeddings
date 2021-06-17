@@ -115,10 +115,10 @@ if __name__ == "__main__":
         optimizer.step()
         cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
         if _ % 1000 == 0:
-            np.savetxt(f"model_output/latent_i_{_}.txt", model.latent_zi.detach().cpu().data, delimiter=" ")
-            np.savetxt(f"model_output/latent_j_{_}.txt", model.latent_zj.detach().cpu().data, delimiter=" ")
-            np.savetxt(f"model_output/beta_{_}.txt", model.beta.detach().cpu().data, delimiter=" ")
-            np.savetxt(f"model_output/gamma_{_}.txt", model.gamma.detach().cpu().data, delimiter=" ")
+            torch.save(model.latent_zi.detach(), f"model_output/latent_i_{_}")
+            torch.save(model.latent_zj.detach(), f"model_output/latent_j_{_}")
+            torch.save(model.beta.detach(), f"model_output/beta_{_}")
+            torch.save(model.gamma.detach(), f"model_output/gamma_{_}")
             np.savetxt(f"model_output/cum_loss_{_}.txt", cum_loss, delimiter=" ")
 
 

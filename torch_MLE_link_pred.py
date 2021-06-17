@@ -254,6 +254,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
     plt.savefig('Average_ROC_curve.png')
+    plt.clf()
 
     #Plotting the average loss based on the cross validation
     train_loss = np.array(train_loss)

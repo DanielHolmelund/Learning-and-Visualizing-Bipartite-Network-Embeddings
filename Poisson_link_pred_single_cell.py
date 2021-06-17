@@ -139,10 +139,10 @@ if __name__ == "__main__":
         optimizer.step()
         cum_loss_train.append(loss.item() / (model.input_size[0]*model.input_size[1]-323140818))
         if _ % 1000 == 0:
-            np.savetxt(f"poisson_link_pred_output/latent_i_{_}.txt", model.latent_zi.detach().data, delimiter=" ")
-            np.savetxt(f"poisson_link_pred_output/latent_j_{_}.txt", model.latent_zj.detach().data, delimiter=" ")
-            np.savetxt(f"poisson_link_pred_output/beta_{_}.txt", model.beta.detach().data, delimiter=" ")
-            np.savetxt(f"poisson_link_pred_output/gamma_{_}.txt", model.gamma.detach().data, delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/latent_i_{_}.txt", model.latent_zi.detach().cpu().data, delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/latent_j_{_}.txt", model.latent_zj.detach().cpu().data, delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/beta_{_}.txt", model.beta.detach().cpu().data, delimiter=" ")
+            np.savetxt(f"poisson_link_pred_output/gamma_{_}.txt", model.gamma.detach().cpu().data, delimiter=" ")
             np.savetxt(f"poisson_link_pred_output/cum_loss_train_{_}.txt", cum_loss_train, delimiter=" ")
             np.savetxt(f"poisson_link_pred_output/cum_loss_test_{_}.txt", cum_loss_test, delimiter=" ")
 

@@ -7,6 +7,7 @@ import numpy as np
 # Creating dataset
 from sklearn import metrics
 import matplotlib.pyplot as plt
+from scipy.io import mmread
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 if device == "cuda:0":
@@ -93,19 +94,57 @@ class LSM(nn.Module):
 
 
 if __name__ == "__main__":
-    #Train set:
+    raw_data = mmread('Datasets/divorce/divorce.mtx')
+
+    A = raw_data.todense()
+
+
+    '''idx = torch.where(A > 0)
+
+    value = A[idx]
+
+    idx_i = idx[0]
+
+    idx_j = idx[1]'''
+
+    A_shape = (50, 9)
+    num_samples = 45
+    idx_i_test = torch.multinomial(input=torch.arange(0, float(A_shape[0])), num_samples=num_samples,
+                                   replacement=True)
+    idx_j_test = torch.multinomial(input=torch.arange(0, float(A_shape[1])), num_samples=num_samples,
+                                   replacement=True)
+
+    A = torch.tensor(A)
+
+    value_test = A[idx_i_test, idx_j_test].numpy()
+
+    A[idx_i_test, idx_j_test] = 0
+
+    # Train data
+    train_data_idx = torch.where(A > 0)
+    values_train = A[train_data_idx[0], train_data_idx[1]].numpy()
+
+    train_idx_i = train_data_idx[0]
+    train_idx_j = train_data_idx[1]
+    train_value = values_train
+
+    test_idx_i = idx_i_test
+    test_idx_j = idx_j_test
+    test_value = value_test
+
+    '''#Train set:
     train_idx_i = np.loadtxt("/work3/s194245/data_train_0.txt", delimiter=" ")
     train_idx_j = np.loadtxt("/work3/s194245/data_train_1.txt", delimiter=" ")
-    train_value = np.loadtxt("/work3/s194245/values_train.txt", delimiter=" ")
+    train_value = np.loadtxt("/work3/s194245/values_train.txt", delimiter=" ")'''
 
     train_idx_i = torch.tensor(train_idx_i).to(device).long()
     train_idx_j = torch.tensor(train_idx_j).to(device).long()
     train_value = torch.tensor(train_value).to(device)
 
-    #Test set:
+    '''#Test set:
     test_idx_i = np.loadtxt("/work3/s194245/data_test_0.txt", delimiter=" ")
     test_idx_j = np.loadtxt("/work3/s194245/data_test_1.txt", delimiter=" ")
-    test_value = np.loadtxt("/work3/s194245/values_test.txt", delimiter=" ")
+    test_value = np.loadtxt("/work3/s194245/values_test.txt", delimiter=" ")'''
 
     test_idx_i = torch.tensor(test_idx_i).to(device).long()
     test_idx_j = torch.tensor(test_idx_j).to(device).long()
@@ -118,8 +157,8 @@ if __name__ == "__main__":
     # Cross-val loop validating 5 seeds;
     torch.manual_seed(0)
 
-    model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=train_idx_i, sparse_j_idx=train_idx_j, count=train_value,
-                sample_i_size=5000, sample_j_size=5000).to(device)
+    model = LSM(input_size=(50, 9), latent_dim=2, sparse_i_idx=train_idx_i, sparse_j_idx=train_idx_j, count=train_value,
+                sample_i_size=30, sample_j_size=5).to(device)
 
     #Deine the optimizer.
     optimizer = optim.Adam(params=list(model.parameters()), lr=learning_rate)
@@ -138,6 +177,7 @@ if __name__ == "__main__":
         loss.backward()
         optimizer.step()
         cum_loss_train.append(loss.item() / (model.input_size[0]*model.input_size[1]-323140818))
+        print(_)
         if _ % 1000 == 0:
             np.savetxt(f"poisson_link_pred_output/latent_i_{_}.txt", model.latent_zi.detach().data, delimiter=" ")
             np.savetxt(f"poisson_link_pred_output/latent_j_{_}.txt", model.latent_zj.detach().data, delimiter=" ")

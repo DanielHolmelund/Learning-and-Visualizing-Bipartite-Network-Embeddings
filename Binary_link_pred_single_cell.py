@@ -141,10 +141,10 @@ if __name__ == "__main__":
     torch.manual_seed(0)
 
     model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=train_idx_i, sparse_j_idx=train_idx_j, count=train_value,
-                sample_i_size=5000, sample_j_size=5000)
+                sample_i_size=5000, sample_j_size=5000).to(device)
 
     #Deine the optimizer.
-    optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(params=list(model.parameters()), lr=learning_rate)
     cum_loss_train = []
     cum_loss_test = []
 
@@ -162,10 +162,10 @@ if __name__ == "__main__":
         optimizer.step()
         cum_loss_train.append(loss.item() / (model.input_size[0]*model.input_size[1]-323140818))
         if _ % 1000 == 0:
-            np.savetxt(f"binary_link_pred_output/latent_i_{_}.txt", deepcopy(model.latent_zi.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/latent_j_{_}.txt", deepcopy(model.latent_zj.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/beta_{_}.txt", deepcopy(model.beta.detach().data), delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/gamma_{_}.txt", deepcopy(model.gamma.detach().data), delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/latent_i_{_}.txt", model.latent_zi.detach().data, delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/latent_j_{_}.txt", model.latent_zj.detach().data, delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/beta_{_}.txt", model.beta.detach().data, delimiter=" ")
+            np.savetxt(f"binary_link_pred_output/gamma_{_}.txt", model.gamma.detach().data, delimiter=" ")
             np.savetxt(f"binary_link_pred_output/cum_loss_train_{_}.txt", cum_loss_train, delimiter=" ")
             np.savetxt(f"binary_link_pred_output/cum_loss_test_{_}.txt", cum_loss_test, delimiter=" ")
             np.savetxt(f"binary_link_pred_output/auc_score_{_}.txt", auc_score, delimiter=" ")

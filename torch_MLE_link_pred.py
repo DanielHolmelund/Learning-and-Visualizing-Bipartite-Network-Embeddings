@@ -127,7 +127,7 @@ class LSM(nn.Module):
             z_dist = (((self.latent_zi[idx_test[0]] - self.latent_zj[idx_test[1]] + 1e-06)**2).sum(-1))**0.5 #Unsqueeze eller ej?
 
             bias_matrix = self.beta[idx_test[0]] + self.gamma[idx_test[1]]
-            Lambda = (bias_matrix - z_dist)
+            Lambda = (bias_matrix - z_dist) * A_test[idx_test[0],idx_test[1]]
             LL_test = (A_test[idx_test[0],idx_test[1]] * Lambda).sum() - torch.sum(torch.exp(Lambda))
             return LL_test
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
 
     #Binarize data-set if True
-    binarized = True
+    binarized = False
     link_pred = True
 
     if binarized:
@@ -166,9 +166,9 @@ if __name__ == "__main__":
             idx_j_test = torch.multinomial(input=torch.arange(0, float(A_shape[1])), num_samples=num_samples,
                                            replacement=True)
             A_test = A.detach().clone()
-            A_test[:] = np.nan
+            A_test[:] = 0
             A_test[idx_i_test,idx_j_test] = A[idx_i_test,idx_j_test]
-            A[idx_i_test,idx_j_test] = np.nan
+            A[idx_i_test,idx_j_test] = 0
 
 
         #Get the counts (only on train data)
@@ -188,10 +188,10 @@ if __name__ == "__main__":
         #Run iterations.
         iterations = 20000
         for _ in range(iterations):
-            loss = -model.log_likelihood() / model.input_size[0]
+            loss = -model.log_likelihood()
             if link_pred:
-                loss_test = -model.test_log_likelihood(A_test) / model.input_size[0]
-                cum_loss_test.append(loss_test.item())
+                loss_test = -model.test_log_likelihood(A_test) / num_samples
+                cum_loss_test.append(loss_test.item() / (A_shape[0]*A_shape[1] - num_samples))
                 print('Test loss at the', _, 'iteration:', loss_test.item())
             optimizer.zero_grad()
             loss.backward()

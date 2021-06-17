@@ -44,21 +44,21 @@ class LSM(nn.Module):
         # USE torch_sparse lib i.e. : from torch_sparse import spspmm
 
         # sample for bipartite network
-        sample_i_idx = torch.multinomial(self.sampling_i_weights, self.sample_i_size, replacement=False)
-        sample_j_idx = torch.multinomial(self.sampling_j_weights, self.sample_j_size, replacement=False)
+        sample_i_idx = torch.multinomial(self.sampling_i_weights, self.sample_i_size, replacement=False).to(device)
+        sample_j_idx = torch.multinomial(self.sampling_j_weights, self.sample_j_size, replacement=False).to(device)
         # translate sampled indices w.r.t. to the full matrix, it is just a diagonal matrix
-        indices_i_translator = torch.cat([sample_i_idx.unsqueeze(0), sample_i_idx.unsqueeze(0)], 0)
-        indices_j_translator = torch.cat([sample_j_idx.unsqueeze(0), sample_j_idx.unsqueeze(0)], 0)
+        indices_i_translator = torch.cat([sample_i_idx.unsqueeze(0), sample_i_idx.unsqueeze(0)], 0).to(device)
+        indices_j_translator = torch.cat([sample_j_idx.unsqueeze(0), sample_j_idx.unsqueeze(0)], 0).to(device)
         # adjacency matrix in edges format
         edges = torch.cat([self.sparse_i_idx.unsqueeze(0), self.sparse_j_idx.unsqueeze(0)], 0)
         # matrix multiplication B = Adjacency x Indices translator
         # see spspmm function, it give a multiplication between two matrices
         # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
         indexC, valueC = spspmm(edges, self.count.float(), indices_j_translator,
-                                torch.ones(indices_j_translator.shape[1]), self.input_size[0], self.input_size[1],
+                                torch.ones(indices_j_translator.shape[1],device=device), self.input_size[0], self.input_size[1],
                                 self.input_size[1], coalesced=True)
         # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
-        indexC, valueC = spspmm(indices_i_translator, torch.ones(indices_i_translator.shape[1]), indexC, valueC,
+        indexC, valueC = spspmm(indices_i_translator, torch.ones(indices_i_translator.shape[1],device=device), indexC, valueC,
                                 self.input_size[0], self.input_size[0], self.input_size[1], coalesced=True)
 
         # edge row position
@@ -124,13 +124,13 @@ if __name__ == "__main__":
     train_data_idx = torch.where(A > 0)
     values_train = A[train_data_idx[0], train_data_idx[1]].numpy()
 
-    train_idx_i = train_data_idx[0]
-    train_idx_j = train_data_idx[1]
-    train_value = values_train
+    train_idx_i = torch.tensor(train_data_idx[0]).to(device)
+    train_idx_j = torch.tensor(train_data_idx[1]).to(device)
+    train_value = torch.tensor(values_train).to(device)
 
-    test_idx_i = idx_i_test
-    test_idx_j = idx_j_test
-    test_value = value_test
+    test_idx_i = torch.tensor(idx_i_test).to(device)
+    test_idx_j = torch.tensor(idx_j_test).to(device)
+    test_value = torch.tensor(value_test).to(device)
 
     '''#Train set:
     train_idx_i = np.loadtxt("/work3/s194245/data_train_0.txt", delimiter=" ")

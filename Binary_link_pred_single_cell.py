@@ -8,7 +8,7 @@ import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 if device == "cuda:0":
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
@@ -54,10 +54,12 @@ class LSM(nn.Module):
         # see spspmm function, it give a multiplication between two matrices
         # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
         indexC, valueC = spspmm(edges, self.count.float(), indices_j_translator,
-                                torch.ones(indices_j_translator.shape[1],device=device), self.input_size[0], self.input_size[1],
+                                torch.ones(indices_j_translator.shape[1], device=device), self.input_size[0],
+                                self.input_size[1],
                                 self.input_size[1], coalesced=True)
         # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
-        indexC, valueC = spspmm(indices_i_translator, torch.ones(indices_i_translator.shape[1],device=device), indexC, valueC,
+        indexC, valueC = spspmm(indices_i_translator, torch.ones(indices_i_translator.shape[1], device=device), indexC,
+                                valueC,
                                 self.input_size[0], self.input_size[0], self.input_size[1], coalesced=True)
 
         # edge row position
@@ -77,7 +79,7 @@ class LSM(nn.Module):
             -1)) ** 0.5
         bias_links = self.beta[sparse_i_sample] + self.gamma[sparse_j_sample]
         log_Lambda_links = valueC * (bias_links - z_dist_links)
-        LL = log_Lambda_links.sum() - torch.sum(torch.exp(self.Lambda))
+        LL = (log_Lambda_links - torch.lgamma(valueC + 1)).sum() - torch.sum(torch.exp(self.Lambda))
 
         return LL
 
@@ -107,71 +109,75 @@ class LSM(nn.Module):
             z_dist = (((self.latent_zi[test_idx_i] - self.latent_zj[test_idx_j] + 1e-06) ** 2).sum(-1)) ** 0.5
 
             bias_matrix = self.beta[test_idx_i] + self.gamma[test_idx_j]
-            Lambda = (bias_matrix - z_dist) * test_value
-            LL_test = (test_value * Lambda).sum() - torch.sum(torch.exp(Lambda))
+            Lambda = (bias_matrix - z_dist)
+            LL_test = ((test_value * Lambda) - (torch.lgamma(test_value + 1))).sum() - torch.sum(torch.exp(Lambda))
             return LL_test
 
 
 if __name__ == "__main__":
-    #Train set:
-    train_idx_i = np.loadtxt("/work3/s194245/data_train_0.txt", delimiter=" ")
-    train_idx_j = np.loadtxt("/work3/s194245/data_train_1.txt", delimiter=" ")
-    train_value = np.loadtxt("/work3/s194245/values_train.txt", delimiter=" ")
+    # Train set:
+    train_idx_i = np.loadtxt("/work3/s194245/New_env/sample_data/data_sub_train_0.txt", delimiter=" ")
+    train_idx_j = np.loadtxt("/work3/s194245/New_env/sample_data/data_sub_train_1.txt", delimiter=" ")
+    train_value = np.loadtxt("/work3/s194245/New_env/sample_data/values_sub_train.txt", delimiter=" ")
 
     train_idx_i = torch.tensor(train_idx_i).to(device).long()
     train_idx_j = torch.tensor(train_idx_j).to(device).long()
     train_value = torch.tensor(train_value).to(device)
 
-    #Test set:
-    test_idx_i = np.loadtxt("/work3/s194245/data_test_0.txt", delimiter=" ")
-    test_idx_j = np.loadtxt("/work3/s194245/data_test_1.txt", delimiter=" ")
-    test_value = np.loadtxt("/work3/s194245/values_test.txt", delimiter=" ")
+    # Test set:
+    test_idx_i = np.loadtxt("/work3/s194245/New_env/sample_data/data_sub_test_0.txt", delimiter=" ")
+    test_idx_j = np.loadtxt("/work3/s194245/New_env/sample_data/data_sub_test_1.txt", delimiter=" ")
+    test_value = np.loadtxt("/work3/s194245/New_env/sample_data/values_sub_test.txt", delimiter=" ")
 
     test_idx_i = torch.tensor(test_idx_i).to(device).long()
     test_idx_j = torch.tensor(test_idx_j).to(device).long()
     test_value = torch.tensor(test_value).to(device)
 
-    #Binarize data-set
-    test_value[:] = 1
+    # Binarize data-set
+    test_value[test_value > 0] = 1
 
     learning_rate = 0.01  # Learning rate for adam
 
     # Define the model with training data.
     # Cross-val loop validating 5 seeds;
-    torch.manual_seed(0)
+    seed = 0
+    torch.manual_seed(seed)
 
-    model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=train_idx_i, sparse_j_idx=train_idx_j, count=train_value,
-                sample_i_size=5000, sample_j_size=5000).to(device)
+    model = LSM(input_size=(20526, 15743), latent_dim=2, sparse_i_idx=train_idx_i, sparse_j_idx=train_idx_j,
+                count=train_value,
+                sample_i_size=2500, sample_j_size=2500).to(device)
 
-    #Deine the optimizer.
+    # Deine the optimizer.
     optimizer = optim.Adam(params=list(model.parameters()), lr=learning_rate)
     cum_loss_train = []
     cum_loss_test = []
-
     # Run iterations.
-    iterations = 100000
-    from copy import deepcopy
+    iterations = 10000
 
     for _ in range(iterations):
         loss = -model.log_likelihood()
-        loss_test = -model.test_log_likelihood(test_idx_i, test_idx_j, test_value) / 323140818
-        cum_loss_test.append(loss_test.item())
-
+        loss_test = -model.test_log_likelihood(test_idx_i, test_idx_j, test_value)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        cum_loss_train.append(loss.item() / (model.input_size[0]*model.input_size[1]-323140818))
-        if _ % 1000 == 0:
+        cum_loss_test.append(loss_test.item() / (len(test_idx_i)))
+        cum_loss_train.append(loss.item() / (model.sample_i_size * model.sample_j_size))
+
+        if _ % 100 == 0:
             auc_score, tpr, fpr = model.link_prediction(test_idx_i, test_idx_j, test_value)
-            torch.save(model.latent_zi.detach(), f"binary_link_pred_output/latent_i_{_}")
-            torch.save(model.latent_zj.detach(), f"binary_link_pred_output/latent_j_{_}")
-            torch.save(model.beta.detach(), f"binary_link_pred_output/beta_{_}")
-            torch.save(model.gamma.detach(), f"binary_link_pred_output/gamma_{_}")
-            np.savetxt(f"binary_link_pred_output/cum_loss_train_{_}.txt", cum_loss_train, delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/cum_loss_test_{_}.txt", cum_loss_test, delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/auc_score_{_}.txt", auc_score, delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/tpr_{_}.txt", tpr, delimiter=" ")
-            np.savetxt(f"binary_link_pred_output/fpr_{_}.txt", fpr, delimiter=" ")
+            torch.save(model.latent_zi.detach(), f"Binary_{seed}0/latent_i_{_}")
+            torch.save(model.latent_zj.detach(), f"Binary_{seed}0/latent_j_{_}")
+            torch.save(model.beta.detach(), f"Binary_{seed}0/beta_{_}")
+            torch.save(model.gamma.detach(), f"Binary_{seed}0/gamma_{_}")
+            np.savetxt(f"Binary_{seed}0/cum_loss_train_{_}.txt", cum_loss_train, delimiter=" ")
+            np.savetxt(f"Binary_{seed}0/cum_loss_test_{_}.txt", cum_loss_test, delimiter=" ")
+            with open(f'Binary_{seed}0/auc_score_{_}.txt', 'w') as f:
+                f.write(str(auc_score))
+            np.savetxt(f"Binary_{seed}0/tpr_{_}.txt", tpr, delimiter=" ")
+            np.savetxt(f"Binary_{seed}0/fpr_{_}.txt", fpr, delimiter=" ")
+
+
+
 
 
 

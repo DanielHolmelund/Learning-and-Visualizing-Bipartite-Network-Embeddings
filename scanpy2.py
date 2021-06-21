@@ -11,8 +11,8 @@ sc.logging.print_header()
 sc.settings.set_figure_params(dpi=80, facecolor='white')
 
 
-adata = sc.read('Datasets/Single_cell/cp.neur.h5ad')
-results_file = 'neuron_raw.h5ad'  # the file that will store the analysis results
+adata = sc.read('neur.sub.h5ad')
+results_file = 'neuron_sub.h5ad'  # the file that will store the analysis results
 
 #Show those genes that yield the highest fraction of counts in each single cell, across all cells.
 sc.pl.highest_expr_genes(adata, n_top=20, save='.pdf', show = False)
@@ -20,7 +20,7 @@ sc.pl.highest_expr_genes(adata, n_top=20, save='.pdf', show = False)
 ### PCA
 sc.tl.pca(adata, svd_solver='arpack') # Do a PCA
 sc.pl.pca(adata, color = "seurat_clusters", show = False, save = "seurat_clusters.PNG") # Plot it
-sc.pl.pca(adata, color = "predicted.id", show = False, save = "seurat_clusters.PNG") # Plot it
+sc.pl.pca(adata, color = "predicted.id", show = False, save = "predicted.PNG") # Plot it
 sc.pl.pca_variance_ratio(adata, show = False, save = ".PNG") # Variance explained for each PC
 
 ### UMAP
@@ -30,12 +30,15 @@ sc.tl.paga(adata)
 sc.pl.paga(adata, plot = False, title='', save='.PNG', show = False)  # remove `plot=False` if you want to see the coarse-grained graph
 sc.tl.umap(adata, init_pos='paga')
 #subplot
-sc.pl.umap(adata, color = ["leiden", "predicted.id", "seurat_clusters"], save='.PNG', show = False)
+#sc.pl.umap(adata, color = ["leiden", "predicted.id", "seurat_clusters"], save='.PNG', show = False)
 
 # Individual plots
 sc.pl.umap(adata, color = ["leiden"], save='leiden.PNG', show = False)
 sc.pl.umap(adata, color = ["predicted.id"], save='predictedid.PNG', show = False)
 sc.pl.umap(adata, color = ["seurat_clusters"], save='seaurat_clusters.PNG', show = False)
+sc.pl.umap(adata, color = ["age"], save='age.PNG', show = False)
+sc.pl.umap(adata, color = ["sex_call"], save='sex.PNG', show = False)
+sc.pl.umap(adata, color = ["geno"], save='geno.PNG', show = False)
 
 ### Plot clusterings of cells
 # compute clusters using the leiden method and store the results with the name `clusters`
@@ -50,10 +53,10 @@ sc.tl.rank_genes_groups(adata, 'leiden', method='wilcoxon', save='.PNG', show = 
 sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False, save='.PNG', show = False)
 
 # Plot trajectory
-sc.tl.paga(adata, groups = "leiden")
-sc.pl.paga(adata, color = ["leiden"], save='.PNG', show = False)
-sc.tl.draw_graph(adata, init_pos="paga")
-sc.pl.draw_graph(adata, color = ["leiden"], save='.PNG', show = False)
+#sc.tl.paga(adata, groups = "leiden")
+#sc.pl.paga(adata, color = ["leiden"], save='.PNG', show = False)
+#sc.tl.draw_graph(adata, init_pos="paga")
+#sc.pl.draw_graph(adata, color = ["leiden"], save='.PNG', show = False)
 
 # Save the result
 adata.write(results_file)
@@ -61,4 +64,3 @@ adata.write(results_file)
 # Export data
 adata.write(results_file, compression='gzip')
 adata.write_csvs(results_file[:-5], )
-

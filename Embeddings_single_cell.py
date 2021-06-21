@@ -8,7 +8,7 @@ import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 if device == "cuda:0":
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
@@ -54,10 +54,12 @@ class LSM(nn.Module):
         # see spspmm function, it give a multiplication between two matrices
         # indexC is the indices where we have non-zero values and valueC the actual values (in this case ones)
         indexC, valueC = spspmm(edges, self.count.float(), indices_j_translator,
-                                torch.ones(indices_j_translator.shape[1],device=device), self.input_size[0], self.input_size[1],
+                                torch.ones(indices_j_translator.shape[1], device=device), self.input_size[0],
+                                self.input_size[1],
                                 self.input_size[1], coalesced=True)
         # second matrix multiplication C = Indices translator x B, indexC returns where we have edges inside the sample
-        indexC, valueC = spspmm(indices_i_translator, torch.ones(indices_i_translator.shape[1],device=device), indexC, valueC,
+        indexC, valueC = spspmm(indices_i_translator, torch.ones(indices_i_translator.shape[1], device=device), indexC,
+                                valueC,
                                 self.input_size[0], self.input_size[0], self.input_size[1], coalesced=True)
 
         # edge row position
@@ -77,36 +79,37 @@ class LSM(nn.Module):
             -1)) ** 0.5
         bias_links = self.beta[sparse_i_sample] + self.gamma[sparse_j_sample]
         log_Lambda_links = valueC * (bias_links - z_dist_links)
-        LL = log_Lambda_links.sum() - torch.sum(torch.exp(self.Lambda))
+        LL = (log_Lambda_links - torch.lgamma(valueC + 1)).sum() - torch.sum(torch.exp(self.Lambda))
 
         return LL
 
 
 if __name__ == "__main__":
 
-    idx_i = np.loadtxt("data_0.txt", delimiter=" ")
-    idx_j = np.loadtxt("data_1.txt", delimiter=" ")
-    value = np.loadtxt("values.txt", delimiter=" ")
+    idx_i = np.loadtxt("/work3/s194245/New_env/sample_data/data_sub_0.txt", delimiter=" ")
+    idx_j = np.loadtxt("/work3/s194245/New_env/sample_data/data_sub_1.txt", delimiter=" ")
+    value = np.loadtxt("/work3/s194245/New_env/sample_data/values_sub.txt", delimiter=" ")
 
     idx_i = torch.tensor(idx_i).to(device).long()
     idx_j = torch.tensor(idx_j).to(device).long()
     value = torch.tensor(value).to(device)
 
-    learning_rate = 0.01  # Learning rate for adam
+    learning_rate = 0.001  # Learning rate for adam
 
     # Define the model with training data.
     torch.manual_seed(0)
 
-    model = LSM(input_size=(20526, 157430), latent_dim=2, sparse_i_idx=idx_i, sparse_j_idx=idx_j, count=value,
-                sample_i_size=5000, sample_j_size=5000).to(device)
+    dim = 3  # Chose the dimensionals for the embeddings
+
+    model = LSM(input_size=(20526, 15743), latent_dim=dim, sparse_i_idx=idx_i, sparse_j_idx=idx_j, count=value,
+                sample_i_size=2500, sample_j_size=2500).to(device)
 
     # Deine the optimizer.
     optimizer = optim.Adam(params=list(model.parameters()), lr=learning_rate)
     cum_loss = []
 
     # Run iterations.
-    iterations = 100000
-    from copy import deepcopy
+    iterations = 1000000
 
     for _ in range(iterations):
         loss = -model.log_likelihood()
@@ -115,10 +118,10 @@ if __name__ == "__main__":
         optimizer.step()
         cum_loss.append(loss.item() / (model.sample_i_size * model.sample_j_size))
         if _ % 1000 == 0:
-            torch.save(model.latent_zi.detach(), f"model_output/latent_i_{_}")
-            torch.save(model.latent_zj.detach(), f"model_output/latent_j_{_}")
-            torch.save(model.beta.detach(), f"model_output/beta_{_}")
-            torch.save(model.gamma.detach(), f"model_output/gamma_{_}")
-            np.savetxt(f"model_output/cum_loss_{_}.txt", cum_loss, delimiter=" ")
+            torch.save(model.latent_zi.detach(), f"Embedding_{dim}d/latent_i_{_}")
+            torch.save(model.latent_zj.detach(), f"Embedding_{dim}d/latent_j_{_}")
+            torch.save(model.beta.detach(), f"Embedding_{dim}d/beta_{_}")
+            torch.save(model.gamma.detach(), f"Embedding_{dim}d/gamma_{_}")
+            np.savetxt(f"Embedding_{dim}d/cum_loss_{_}.txt", cum_loss, delimiter=" ")
 
 

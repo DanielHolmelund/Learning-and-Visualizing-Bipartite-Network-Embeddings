@@ -1,0 +1,45 @@
+column,explanation
+cell_id,cell barcode
+"hto_global,""whether a single cell was sequenced, or two (doublet) or none (negative). Dataset contains only singlets"""
+hash_max,the most abundant hash tag in the cell
+hash_id,the predicted correct hash tag for the cell
+doublet,whether or not cell likely consists of several cells (have been filtered out)
+sizeFactor,a parameter in doublet detection
+"proportion_dub_neighbors,""the proportion of neighbour, i.e. similar cells, predicted to be doublets"""
+"predicted_dub_std,""whether, based on neighbour cells, cell is predicted to be a doublet (containing two cells with the same hash tags)"""
+predicted_dub_cut,a parameter in hashtag demultiplexing
+sum,a parameter in hashtag demultiplexing
+detected,a parameter in hashtag demultiplexing
+altexps_hto_sum,a parameter in hashtag demultiplexing
+altexps_hto_detected,a parameter in hashtag demultiplexing
+altexps_hto_percent,a parameter in hashtag demultiplexing
+altexps_spliced_sum,a sequencing quality parameter
+altexps_spliced_detected,a sequencing quality parameter
+altexps_spliced_percent,a sequencing quality parameter
+altexps_unspliced_sum,a sequencing quality parameter
+altexps_unspliced_detected,a sequencing quality parameter
+altexps_unspliced_percent,a sequencing quality parameter
+total,a sequencing quality parameter
+discard,whether cell should be discarded (all FALSE)
+hash_pool,the name of the hash pool of samples sequenced together
+"hash_id.1,""hash id, same as hash_max and hash_id"""
+sequencing_pool,NA
+age,mouse age
+date,date of mouse sacrifice
+weight,mouse weight
+length,mouse length
+littersize,mouse littersize
+leptin,mouse blood leptin level
+diet,mouse diet. CHOW is normal
+"geno,""mouse genotype, wt is wildtype, i.e. a normal mouse, mut is mutant"""
+"nCount_SCT,""the total number of UMIs in the cell, after SCTransform normalization"""
+"nFeature_SCT,""the total number of different genes detected in the cell, after SCTransform normalization"""
+"SCT_snn_res.0.8,""Cluster labels, clustering resolution 0.8"""
+seurat_clusters,Assigned cluster labels
+predicted.id,Predicted cell type label using a reference dataset
+"prediction.score.max,""The prediction score for predicted cell type, 0-1"""
+sex_call,Predicted mouse sex
+"nCount_RNA,""the total number of UMIs in the cell, before SCTransform normalization"""
+"nFeature_RNA,""the total number of different genes detected in the cell, before SCTransform normalization"""
+ob_enrich,how much the cell appears to come from an OB-OB mutant genotype
+sex_enrich,strength of sex prediction
